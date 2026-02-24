@@ -4,7 +4,7 @@ import { Wall } from './wall.js';
 import { sortTiles, tileName, tilesEqual } from './tiles.js';
 import { calcShanten, isWinningHand, getWinType } from './hand.js';
 import { calcScore, calcPayments } from './scoring.js';
-import { chooseDiscard, shouldRiichi, shouldPon, shouldKan } from './ai.js';
+import { chooseDiscard, shouldRiichi, shouldPon, shouldKan, calcDiscardAnalysis } from './ai.js';
 
 export const PLAYERS = 4;
 export const SEATS   = ['南', '西', '北', '東'];
@@ -42,6 +42,7 @@ export class Game {
     this.log           = [];
     this.winResult     = null;
     this.reviewData    = null;
+    this.discardHistory = [[], [], [], []]; // 各プレイヤーの打牌履歴
 
     const dealt = this.wall.deal(PLAYERS);
     for (let i = 0; i < PLAYERS; i++) this.hands[i] = sortTiles(dealt[i]);
@@ -105,8 +106,11 @@ export class Game {
       }
     }
 
-    // 打牌
-    const discard = chooseDiscard(hand, this._meldTilesFlat(playerIdx), doras, meldCnt);
+    // 打牌（リーチ中の相手の現物を安全牌として渡す）
+    const riichiDiscards = this.riichi
+      .map((r, i) => (r && i !== playerIdx) ? this.discards[i] : null)
+      .filter(d => d !== null);
+    const discard = chooseDiscard(hand, this._meldTilesFlat(playerIdx), doras, meldCnt, riichiDiscards);
     setTimeout(() => this._discard(playerIdx, discard), 400);
   }
 
@@ -177,6 +181,15 @@ export class Game {
   _discard(playerIdx, tile) {
     const idx = this.hands[playerIdx].findIndex(t => t.id === tile.id);
     if (idx === -1) return;
+
+    // 打牌前の手牌状態を履歴に記録（振り返り用）
+    this.discardHistory[playerIdx].push({
+      handBefore: [...this.hands[playerIdx]],
+      meldTiles:  [...this._meldTilesFlat(playerIdx)],
+      meldCount:  this.melds[playerIdx].length,
+      doras:      [...this.wall.getDoras()],
+      discardedId: tile.id,
+    });
 
     this.hands[playerIdx].splice(idx, 1);
     this.discards[playerIdx].push(tile);
@@ -305,12 +318,16 @@ export class Game {
       } else {
         this.state = STATE.CPU_TURN;
         setTimeout(() => {
-          const meldCnt = this.melds[playerIdx].length;
+          const meldCnt   = this.melds[playerIdx].length;
+          const riichiDsc = this.riichi
+            .map((r, i) => (r && i !== playerIdx) ? this.discards[i] : null)
+            .filter(d => d !== null);
           const d = chooseDiscard(
             this.hands[playerIdx],
             this._meldTilesFlat(playerIdx),
             this.wall.getDoras(),
-            meldCnt
+            meldCnt,
+            riichiDsc
           );
           this._discard(playerIdx, d);
         }, 500);
@@ -398,31 +415,40 @@ export class Game {
       winTypeName: getWinType(hand, meldCnt),
     };
 
-    // 局振り返り用スナップショット
-    this.reviewData = {
-      hands: this.hands.map((h, i) => {
-        const tiles = sortTiles([...h]);
-        if (i === winnerIdx && winType === 'ron') tiles.push(this.lastDiscard);
-        return tiles;
-      }),
-      melds:    this.melds.map(ms => ms.map(m => ({ ...m, tiles: [...m.tiles] }))),
-      discards: this.discards.map(d => [...d]),
-      riichi:   [...this.riichi],
-    };
+    // 局振り返り用スナップショット（打牌分析を事前計算）
+    this.reviewData = this._buildReviewData(winnerIdx, winType);
 
     this.addLog(`${SEATS[winnerIdx]} ${winType === 'ron' ? 'ロン' : 'ツモ'}和了！ ${scoreResult.total}点`);
     this.state = STATE.WIN;
     this.onUpdate('win', this.winResult);
   }
 
-  _drawGame() {
-    // 局振り返り用スナップショット
-    this.reviewData = {
-      hands:    this.hands.map(h => sortTiles([...h])),
-      melds:    this.melds.map(ms => ms.map(m => ({ ...m, tiles: [...m.tiles] }))),
-      discards: this.discards.map(d => [...d]),
-      riichi:   [...this.riichi],
+  _buildReviewData(winnerIdx, winType) {
+    const hands = this.hands.map((h, i) => {
+      const tiles = sortTiles([...h]);
+      if (i === winnerIdx && winType === 'ron') tiles.push(this.lastDiscard);
+      return tiles;
+    });
+
+    // 全打牌の分析を事前計算（UIをブロックしないよう同期で行う）
+    const discardAnalysis = this.discardHistory.map(playerHistory =>
+      playerHistory.map(entry =>
+        calcDiscardAnalysis(entry.handBefore, entry.meldTiles, entry.meldCount, entry.doras)
+      )
+    );
+
+    return {
+      hands,
+      melds:           this.melds.map(ms => ms.map(m => ({ ...m, tiles: [...m.tiles] }))),
+      discards:        this.discards.map(d => [...d]),
+      riichi:          [...this.riichi],
+      discardHistory:  this.discardHistory.map(ph => ph.map(e => ({ ...e }))),
+      discardAnalysis,
     };
+  }
+
+  _drawGame() {
+    this.reviewData = this._buildReviewData(null, 'draw');
     this.addLog('流局');
     this.state = STATE.DRAW_GAME;
     this.onUpdate('draw_game', {});

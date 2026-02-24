@@ -304,21 +304,70 @@ export function showReviewDialog(reviewData) {
       section.appendChild(meldRow);
     }
 
-    // 捨て牌
+    // 捨て牌（損失分析つき）
     if (reviewData.discards[i].length > 0) {
       const discardLabel = document.createElement('div');
       discardLabel.classList.add('review-section-label');
-      discardLabel.textContent = '捨て牌';
+      discardLabel.textContent = '捨て牌（分析）';
       section.appendChild(discardLabel);
 
       const discardRow = document.createElement('div');
-      discardRow.classList.add('review-hand-row');
-      for (const t of reviewData.discards[i]) {
-        const el = createTileEl(t);
-        el.classList.add('discard-tile');
-        discardRow.appendChild(el);
-      }
+      discardRow.classList.add('review-discard-row');
+
+      const playerAnalysis = reviewData.discardAnalysis?.[i];
+
+      reviewData.discards[i].forEach((tile, j) => {
+        const turnAnalysis = playerAnalysis?.[j];
+        // 実際に切った牌の損失を探す
+        const actual = turnAnalysis?.find(a => a.tile.id === tile.id);
+        const loss = actual?.loss ?? 0;
+
+        // 最善手を探す
+        const bestEntry = turnAnalysis?.find(a => a.isOptimal);
+
+        // ラッパー div（損失クラスを付ける）
+        const wrap = document.createElement('div');
+        wrap.classList.add('review-tile-wrap');
+        if (loss === 0)        wrap.classList.add('loss-optimal');
+        else if (loss < 20)    wrap.classList.add('loss-minor');
+        else if (loss < 100)   wrap.classList.add('loss-medium');
+        else                   wrap.classList.add('loss-bad');
+
+        const tileEl = createTileEl(tile);
+        tileEl.classList.add('discard-tile');
+        wrap.appendChild(tileEl);
+
+        // 損失インジケーター
+        const indicator = document.createElement('div');
+        indicator.classList.add('review-loss-label');
+        if (loss === 0) {
+          indicator.textContent = '◎';
+        } else if (loss < 20) {
+          indicator.textContent = `-${loss}`;
+        } else {
+          // 推奨牌を表示
+          const bestLabel = bestEntry
+            ? `推奨:${NUM_CHARS[bestEntry.tile.suit][bestEntry.tile.num]}`
+            : '';
+          indicator.textContent = `-${loss}${bestLabel ? ' ' + bestLabel : ''}`;
+          indicator.title = bestLabel;
+        }
+        wrap.appendChild(indicator);
+
+        discardRow.appendChild(wrap);
+      });
+
       section.appendChild(discardRow);
+
+      // 凡例
+      const legend = document.createElement('div');
+      legend.classList.add('review-legend');
+      legend.innerHTML =
+        '<span class="leg-optimal">◎最善</span>' +
+        '<span class="leg-minor">±20未満</span>' +
+        '<span class="leg-medium">-20〜99</span>' +
+        '<span class="leg-bad">-100以上</span>';
+      section.appendChild(legend);
     }
 
     content.appendChild(section);
