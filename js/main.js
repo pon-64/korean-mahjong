@@ -68,5 +68,9 @@ document.addEventListener('DOMContentLoaded', () => {
     render(game.getState());
   });
 
-  startGame();
+  // スタートボタン
+  document.getElementById('btn-start').addEventListener('click', () => {
+    document.getElementById('start-screen').style.display = 'none';
+    startGame();
+  });
 });
