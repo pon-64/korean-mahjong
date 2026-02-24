@@ -1,6 +1,5 @@
 // hand.js - シャンテン数計算・和了判定・テンパイ牌列挙
 
-// 牌→インデックス変換 (0-8=萬, 9-17=筒, 18-26=索, 27-33=字牌)
 function tileIndex(t) {
   if (t.suit === 'm') return t.num - 1;
   if (t.suit === 'p') return 9 + t.num - 1;
@@ -26,63 +25,63 @@ function tilesToCounts(tiles) {
 }
 
 // ---- 通常形シャンテン数 ----
-// DFS で左から順に牌を処理し、mentsu/jantai/taatsu を最大化する
-function shantenRegular(c) {
+// meldCount: すでに完成している副露メンツ数（ポン・カン）
+function shantenRegular(c, meldCount) {
+  const maxMentsu = 4 - meldCount; // 閉じた手牌で作るべき残りメンツ数
   let best = 8;
 
   function dfs(i, mentsu, jantai, taatsu) {
-    // 次の非ゼロ位置まで進む
     while (i < 34 && c[i] === 0) i++;
 
     if (i >= 34) {
-      // mentsu+taatsu の合計は 4 まで
-      const p = Math.min(taatsu, 4 - mentsu);
-      const val = 2 * mentsu + (jantai ? 1 : 0) + p;
+      const p   = Math.min(taatsu, maxMentsu - mentsu);
+      const val = 2 * (mentsu + meldCount) + (jantai ? 1 : 0) + p;
       if (8 - val < best) best = 8 - val;
       return;
     }
 
-    // 上界プルーニング: 残り牌を全部メンツにしても best を超えられないなら中断
+    // 上界プルーニング
     let rem = 0;
     for (let j = i; j < 34; j++) rem += c[j];
-    const maxMore = 2 * Math.floor(rem / 3) + Math.min(rem % 3, 2);
-    const currVal = 2 * mentsu + (jantai ? 1 : 0) + Math.min(taatsu, 4 - mentsu);
-    if (8 - (currVal + maxMore) >= best) return;
+    const addMentsu = Math.min(Math.floor(rem / 3), maxMentsu - mentsu);
+    const addPartial = Math.min(Math.floor((rem - addMentsu * 3) / 2), maxMentsu - mentsu - addMentsu);
+    const currVal = 2 * (mentsu + meldCount) + (jantai ? 1 : 0) + Math.min(taatsu, maxMentsu - mentsu);
+    if (8 - (currVal + 2 * addMentsu + addPartial) >= best) return;
 
-    const suit    = Math.floor(i / 9);   // 0=萬 1=筒 2=索 3=字
-    const inSuit  = i % 9;               // スーツ内の位置 (0-8)
+    const suit   = Math.floor(i / 9);
+    const inSuit = i % 9;
 
-    // 刻子（mentsu）
-    if (c[i] >= 3 && mentsu < 4) {
+    // 刻子
+    if (c[i] >= 3 && mentsu < maxMentsu) {
       c[i] -= 3;
       dfs(i, mentsu + 1, jantai, taatsu);
       c[i] += 3;
     }
 
-    // 順子（mentsu）- 数牌のみ
-    if (suit < 3 && inSuit <= 6 && mentsu < 4 &&
+    // 順子（数牌のみ）
+    if (suit < 3 && inSuit <= 6 && mentsu < maxMentsu &&
         c[i] >= 1 && c[i+1] >= 1 && c[i+2] >= 1) {
       c[i]--; c[i+1]--; c[i+2]--;
       dfs(i, mentsu + 1, jantai, taatsu);
       c[i]++; c[i+1]++; c[i+2]++;
     }
 
-    // 雀頭（jantai）
+    // 雀頭
     if (!jantai && c[i] >= 2) {
       c[i] -= 2;
       dfs(i, mentsu, true, taatsu);
       c[i] += 2;
     }
 
-    // 塔子：対子
-    if (c[i] >= 2 && mentsu + taatsu < 4) {
+    // 対子（塔子）
+    if (c[i] >= 2 && mentsu + taatsu < maxMentsu) {
       c[i] -= 2;
       dfs(i, mentsu, jantai, taatsu + 1);
       c[i] += 2;
     }
 
-    // 塔子：順子候補（数牌のみ）
-    if (suit < 3 && mentsu + taatsu < 4) {
+    // 連続塔子（数牌のみ）
+    if (suit < 3 && mentsu + taatsu < maxMentsu) {
       if (inSuit <= 7 && c[i+1] >= 1) {
         c[i]--; c[i+1]--;
         dfs(i, mentsu, jantai, taatsu + 1);
@@ -95,7 +94,6 @@ function shantenRegular(c) {
       }
     }
 
-    // この牌をスキップ（使わない）
     dfs(i + 1, mentsu, jantai, taatsu);
   }
 
@@ -103,61 +101,64 @@ function shantenRegular(c) {
   return best;
 }
 
-// ---- 七対子シャンテン数（韓麻：同一牌4枚=2対子）----
+// ---- 七対子（副露なし専用・韓麻: 同一牌4枚=2対子）----
 function shantenChiitoi(c) {
   let pairs = 0;
-  for (let i = 0; i < 34; i++) {
-    pairs += Math.floor(c[i] / 2);
-  }
+  for (let i = 0; i < 34; i++) pairs += Math.floor(c[i] / 2);
   return 6 - Math.min(pairs, 7);
 }
 
-// ---- 国士無双シャンテン数 ----
+// ---- 国士無双（副露なし専用）----
 const KOKUSHI_IDX = [0, 8, 9, 17, 18, 26, 27, 28, 29, 30, 31, 32, 33];
 
 function shantenKokushi(c) {
-  let kinds = 0;
-  let hasPair = false;
+  let kinds = 0, hasPair = false;
   for (const i of KOKUSHI_IDX) {
-    if (c[i] >= 1) {
-      kinds++;
-      if (c[i] >= 2) hasPair = true;
-    }
+    if (c[i] >= 1) { kinds++; if (c[i] >= 2) hasPair = true; }
   }
   return 13 - kinds - (hasPair ? 1 : 0);
 }
 
 // ---- 公開 API ----
 
-export function calcShanten(tiles) {
+/**
+ * シャンテン数を返す（-1=和了）
+ * @param {Array}  tiles      閉じた手牌（副露牌を除く）+ ツモ/ロン牌
+ * @param {number} meldCount  副露済みメンツ数（ポン・カン）
+ */
+export function calcShanten(tiles, meldCount = 0) {
   if (tiles.length === 0) return 8;
   const c = tilesToCounts(tiles);
-  return Math.min(
-    shantenRegular(c),
-    shantenChiitoi(c),
-    shantenKokushi(c)
-  );
+  const n = shantenRegular(c, meldCount);
+  // 七対子・国士は副露なし専用
+  if (meldCount > 0) return n;
+  return Math.min(n, shantenChiitoi(c), shantenKokushi(c));
 }
 
-export function isWinningHand(tiles) {
-  return calcShanten(tiles) === -1;
+export function isWinningHand(tiles, meldCount = 0) {
+  return calcShanten(tiles, meldCount) === -1;
 }
 
-export function getTenpaiWaits(tiles) {
-  if (calcShanten(tiles) !== 0) return [];
+/**
+ * テンパイ待ち牌一覧
+ * @param {Array}  tiles      閉じた手牌
+ * @param {number} meldCount
+ */
+export function getTenpaiWaits(tiles, meldCount = 0) {
+  if (calcShanten(tiles, meldCount) !== 0) return [];
   const waits = [];
   for (let i = 0; i < 34; i++) {
-    const testTile = { suit: idxToSuit(i), num: idxToNum(i), isRed: false, id: -1 };
-    if (calcShanten([...tiles, testTile]) === -1) {
-      waits.push({ suit: testTile.suit, num: testTile.num });
+    const t = { suit: idxToSuit(i), num: idxToNum(i), isRed: false, id: -1 };
+    if (calcShanten([...tiles, t], meldCount) === -1) {
+      waits.push({ suit: t.suit, num: t.num });
     }
   }
   return waits;
 }
 
-export function getWinType(tiles) {
+export function getWinType(tiles, meldCount = 0) {
   const c = tilesToCounts(tiles);
-  if (shantenKokushi(c) === -1) return 'kokushi';
-  if (shantenChiitoi(c) === -1) return 'chiitoi';
+  if (meldCount === 0 && shantenKokushi(c) === -1) return 'kokushi';
+  if (meldCount === 0 && shantenChiitoi(c) === -1) return 'chiitoi';
   return 'normal';
 }

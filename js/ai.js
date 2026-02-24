@@ -1,115 +1,96 @@
 // ai.js - CPU AI（シャンテン数ベース）
 
-import { SUITS, tilesEqual, tileKey } from './tiles.js';
-import { calcShanten, getTenpaiWaits, isWinningHand } from './hand.js';
+import { tilesEqual } from './tiles.js';
+import { calcShanten, isWinningHand } from './hand.js';
 
 /**
- * 捨て牌を決定する（シャンテン数最小化）
- * @param {Array} tiles - 手牌14枚（副露後は14-副露数*3+1枚 + 副露）
- * @param {Array} meldTiles - 副露している牌（除外してシャンテン計算）
- * @param {Array} doras - 現在のドラ牌リスト
- * @returns tile - 捨てる牌
+ * 打牌決定（シャンテン数最小化）
+ * @param {Array}  hand       手牌全体（副露牌含む）
+ * @param {Array}  meldTiles  副露牌の配列（手牌から除外してシャンテン計算）
+ * @param {Array}  doras      ドラ牌リスト
+ * @param {number} meldCount  副露済みメンツ数
  */
-export function chooseDiscard(tiles, meldTiles = [], doras = []) {
-  // 手牌から副露牌を除いた閉じた手牌
-  const closedTiles = tiles.filter(t => !meldTiles.some(m => m.id === t.id));
+export function chooseDiscard(hand, meldTiles = [], doras = [], meldCount = 0) {
+  const meldIds = new Set(meldTiles.map(t => t.id));
+  const closed  = hand.filter(t => !meldIds.has(t.id));
 
   let bestShanten = Infinity;
-  let bestTiles = [];
+  let bestCandidates = [];
 
-  for (let i = 0; i < closedTiles.length; i++) {
-    const candidate = [...closedTiles.slice(0, i), ...closedTiles.slice(i + 1)];
-    const s = calcShanten(candidate);
+  for (let i = 0; i < closed.length; i++) {
+    const rest = closed.filter((_, j) => j !== i);
+    const s = calcShanten(rest, meldCount);
     if (s < bestShanten) {
       bestShanten = s;
-      bestTiles = [closedTiles[i]];
+      bestCandidates = [closed[i]];
     } else if (s === bestShanten) {
-      bestTiles.push(closedTiles[i]);
+      bestCandidates.push(closed[i]);
     }
   }
 
-  if (bestTiles.length === 1) return bestTiles[0];
+  if (bestCandidates.length === 1) return bestCandidates[0];
 
-  // 同シャンテン数の中から優先度で選ぶ
-  // 優先度: 孤立字牌 > 孤立数牌端 > ドラ以外 > ドラ
-  return bestTiles.sort((a, b) => {
-    const aScore = discardPriority(a, doras, closedTiles);
-    const bScore = discardPriority(b, doras, closedTiles);
-    return bScore - aScore; // 高いほど捨てやすい
-  })[0];
+  // 同シャンテン数の中で優先度付け（高い = 先に切る）
+  return bestCandidates.sort((a, b) =>
+    discardPriority(b, doras, closed) - discardPriority(a, doras, closed)
+  )[0];
 }
 
 function discardPriority(tile, doras, hand) {
   let score = 0;
-
-  // ドラは捨てにくい
   if (tile.isRed) score -= 10;
-  if (doras.some(d => tilesEqual(d, tile))) score -= 8;
-
-  // 字牌は捨てやすい
-  if (tile.suit === SUITS.HONOR) score += 5;
-
-  // 数牌の端（1,9）は孤立しやすい
-  if (tile.suit !== SUITS.HONOR && (tile.num === 1 || tile.num === 9)) score += 2;
-
-  // 手牌内に隣接牌があるか確認（ない=孤立牌）
-  if (tile.suit !== SUITS.HONOR) {
+  if (doras.some(d => d.suit === tile.suit && d.num === tile.num)) score -= 8;
+  if (tile.suit === 'z') score += 5;
+  if (tile.suit !== 'z' && (tile.num === 1 || tile.num === 9)) score += 2;
+  // 孤立牌（隣接牌なし）は先切り
+  if (tile.suit !== 'z') {
     const hasNeighbor = hand.some(t =>
       t !== tile && t.suit === tile.suit &&
-      (t.num === tile.num - 1 || t.num === tile.num + 1 ||
-       t.num === tile.num - 2 || t.num === tile.num + 2)
+      Math.abs(t.num - tile.num) <= 2
     );
     if (!hasNeighbor) score += 3;
   }
-
   return score;
 }
 
 /**
- * リーチを宣言すべきか判断
+ * リーチすべきか（クローズ手でテンパイ）
  */
-export function shouldRiichi(closedTiles) {
-  return calcShanten(closedTiles) === 0; // テンパイならリーチ
+export function shouldRiichi(closedTiles, meldCount = 0) {
+  return meldCount === 0 && calcShanten(closedTiles, 0) === 0;
 }
 
 /**
- * ポンすべきか判断（シャンテン数が下がるか）
+ * ポンすべきか（ポン後のシャンテン数が改善 or テンパイになる）
  */
-export function shouldPon(closedTiles, ponTile, doras = []) {
-  const currentShanten = calcShanten(closedTiles);
+export function shouldPon(closedTiles, ponTile, doras = [], meldCount = 0) {
+  const currentShanten = calcShanten(closedTiles, meldCount);
 
-  // ポン後の仮手牌（ponTileを2枚使ってメンツ確定）
-  const remaining = [...closedTiles];
+  // ポン後：closedTilesから2枚除去、1枚捨てた後のシャンテン数を計算
+  const afterRemove = [];
   let removed = 0;
-  for (let i = remaining.length - 1; i >= 0 && removed < 2; i--) {
-    if (tilesEqual(remaining[i], ponTile)) {
-      remaining.splice(i, 1);
-      removed++;
-    }
+  for (const t of closedTiles) {
+    if (removed < 2 && tilesEqual(t, ponTile)) { removed++; continue; }
+    afterRemove.push(t);
+  }
+  if (removed < 2) return false;
+
+  const newMeldCount = meldCount + 1;
+  let best = Infinity;
+  for (let i = 0; i < afterRemove.length; i++) {
+    const rest = afterRemove.filter((_, j) => j !== i);
+    const s = calcShanten(rest, newMeldCount);
+    if (s < best) best = s;
   }
 
-  // ポン後に1枚捨てた場合のシャンテン数
-  let afterShanten = Infinity;
-  for (let i = 0; i < remaining.length; i++) {
-    const test = [...remaining.slice(0, i), ...remaining.slice(i + 1)];
-    const s = calcShanten(test);
-    if (s < afterShanten) afterShanten = s;
-  }
-
-  // シャンテン数が下がるかテンパイになる場合はポン
-  return afterShanten <= currentShanten - 1 || afterShanten === 0;
+  return best < currentShanten || best === 0;
 }
 
 /**
- * カン（暗槓）すべきか判断
+ * 暗槓すべきか（シャンテン数が悪化しない）
  */
-export function shouldKan(closedTiles, kanTile) {
-  const currentShanten = calcShanten(closedTiles);
-
-  // カン後（4枚除いてシャンテン計算）
-  const remaining = closedTiles.filter(t => !tilesEqual(t, kanTile));
-  const afterShanten = calcShanten(remaining);
-
-  // シャンテン数が変わらない or 改善する場合のみカン
-  return afterShanten <= currentShanten;
+export function shouldKan(closedTiles, kanTile, meldCount = 0) {
+  const currentShanten = calcShanten(closedTiles, meldCount);
+  const after = closedTiles.filter(t => !tilesEqual(t, kanTile));
+  return calcShanten(after, meldCount + 1) <= currentShanten;
 }
