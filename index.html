@@ -10,62 +10,67 @@
   <h1>韓国麻雀 Paradise City</h1>
 
   <div id="board">
-    <!-- 上部情報 -->
+
+    <!-- 上部情報バー -->
     <div id="top-info">
       <div id="dora-area">
-        <span style="font-size:11px;color:#aaa">ドラ表示:</span>
+        <span class="label-text">ドラ表示:</span>
         <div id="dora-indicators"></div>
       </div>
       <div id="remaining">残り -- 枚</div>
-      <div style="font-size:11px;color:#aaa">局: <span id="round-num">1</span></div>
+      <div class="label-text">局: <span id="round-num">1</span></div>
     </div>
 
-    <!-- CPU 西（左） -->
-    <div class="cpu-side cpu-west" id="cpu-west">
-      <div class="player-label">西<br><span id="score-1" class="score-label">0pt</span></div>
-      <div id="riichi-1" class="riichi-stick">リーチ</div>
-      <div id="cpu-hand-1" class="cpu-hand-vertical"></div>
-      <div id="melds-1" class="meld-row"></div>
-      <div id="discards-1" class="discard-area"></div>
-    </div>
+    <!-- CPU 3人ライン（上家・対面・下家） -->
+    <div id="cpu-row">
 
-    <!-- 中央エリア -->
-    <div id="center-area">
-      <!-- CPU 北（上） -->
-      <div class="cpu-north">
-        <div class="player-label">北 <span id="score-2" class="score-label">0pt</span>
+      <!-- 上家（東 / index3）: 左 -->
+      <div class="cpu-panel" id="panel-east">
+        <div class="cpu-header">
+          <span class="seat-name">東（上家）</span>
+          <span id="score-3" class="score-label">0pt</span>
+          <span id="riichi-3" class="riichi-stick">リーチ</span>
+        </div>
+        <div id="cpu-hand-3" class="cpu-hand-row"></div>
+        <div id="melds-3" class="meld-row"></div>
+        <div id="discards-3" class="discard-area"></div>
+      </div>
+
+      <!-- 対面（北 / index2）: 中央 -->
+      <div class="cpu-panel cpu-center" id="panel-north">
+        <div class="cpu-header">
+          <span class="seat-name">北（対面）</span>
+          <span id="score-2" class="score-label">0pt</span>
           <span id="riichi-2" class="riichi-stick">リーチ</span>
         </div>
-        <div id="cpu-hand-2" style="display:flex;gap:2px;"></div>
+        <div id="cpu-hand-2" class="cpu-hand-row"></div>
         <div id="melds-2" class="meld-row"></div>
         <div id="discards-2" class="discard-area"></div>
       </div>
 
-      <!-- 卓中央 -->
-      <div style="display:flex;gap:16px;align-items:center;margin:4px 0;">
-        <div id="discards-3" class="discard-area" style="flex:1"></div>
-        <div style="text-align:center;color:#ffd700;font-size:13px;">東<br><span id="score-3" class="score-label">0pt</span>
-          <div id="riichi-3" class="riichi-stick">リーチ</div>
+      <!-- 下家（西 / index1）: 右 -->
+      <div class="cpu-panel" id="panel-west">
+        <div class="cpu-header">
+          <span class="seat-name">西（下家）</span>
+          <span id="score-1" class="score-label">0pt</span>
+          <span id="riichi-1" class="riichi-stick">リーチ</span>
         </div>
-        <div id="melds-3" class="meld-row"></div>
-        <div id="cpu-hand-3" style="display:flex;flex-direction:column;gap:2px;"></div>
+        <div id="cpu-hand-1" class="cpu-hand-row"></div>
+        <div id="melds-1" class="meld-row"></div>
+        <div id="discards-1" class="discard-area"></div>
       </div>
-    </div>
 
-    <!-- CPU 東（右） は上の中央エリアに含まれているので空 -->
-    <div class="cpu-side cpu-east" style="display:none"></div>
+    </div>
 
     <!-- プレイヤーエリア（南） -->
     <div id="player-area">
-      <div style="display:flex;gap:8px;align-items:center;">
-        <div id="discards-0" class="discard-area" style="flex:1;min-height:36px;"></div>
-      </div>
-      <div style="display:flex;align-items:center;gap:8px;">
-        <div class="player-label">あなた（南）</div>
+      <div class="cpu-header">
+        <span class="seat-name">南（あなた）</span>
         <span id="score-0" class="score-label">0pt</span>
         <span id="riichi-0" class="riichi-stick">リーチ</span>
       </div>
-      <div id="melds-0"></div>
+      <div id="discards-0" class="discard-area"></div>
+      <div id="melds-0" class="meld-row"></div>
       <div id="player-hand"></div>
     </div>
 
@@ -77,6 +82,7 @@
       <button class="action-btn" id="btn-pon" disabled>ポン</button>
       <button class="action-btn" id="btn-pass" disabled>パス</button>
     </div>
+
   </div>
 
   <!-- ゲームログ -->

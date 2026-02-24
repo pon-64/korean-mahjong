@@ -23,28 +23,22 @@ h1 {
 
 /* ====== ボード ====== */
 #board {
-  width: 780px;
+  width: 820px;
   max-width: 100vw;
-  display: grid;
-  grid-template-areas:
-    "top-info top-info top-info"
-    "cpu-west center-area cpu-east"
-    "player-area player-area player-area"
-    "controls controls controls";
-  grid-template-columns: 120px 1fr 120px;
-  gap: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
   padding: 6px;
 }
 
-/* ====== 上部情報 ====== */
+/* ====== 上部情報バー ====== */
 #top-info {
-  grid-area: top-info;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background: rgba(0,0,0,0.3);
-  padding: 6px 12px;
-  border-radius: 6px;
+  background: rgba(0,0,0,0.35);
+  padding: 6px 14px;
+  border-radius: 8px;
 }
 
 #dora-area {
@@ -55,65 +49,135 @@ h1 {
 
 #dora-indicators {
   display: flex;
-  gap: 2px;
+  gap: 3px;
 }
 
-#remaining {
-  font-size: 12px;
-  color: #aaa;
-}
+.label-text { font-size: 11px; color: #aaa; }
+#remaining { font-size: 12px; color: #aaa; }
 
-/* ====== 中央エリア ====== */
-#center-area {
-  grid-area: center-area;
+/* ====== CPU 3人ライン ====== */
+#cpu-row {
   display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 4px;
-}
-
-/* CPU 上家（北）*/
-.cpu-north {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 2px;
-}
-
-/* 捨て牌エリア */
-.discard-area {
-  background: rgba(0,0,0,0.25);
-  border-radius: 6px;
-  padding: 4px;
-  min-height: 30px;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 2px;
-}
-
-.discard-tile {
-  width: 26px !important;
-  height: 36px !important;
-  font-size: 14px !important;
-}
-
-/* 中央卓 */
-#table-center {
-  display: grid;
-  grid-template-columns: 1fr 200px 1fr;
-  grid-template-rows: auto auto auto;
-  gap: 4px;
+  gap: 8px;
   width: 100%;
 }
 
-.table-discards-row {
-  display: contents;
+.cpu-panel {
+  flex: 1;
+  background: rgba(0,0,0,0.25);
+  border-radius: 8px;
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.cpu-center {
+  flex: 1.2;  /* 対面は少し広め */
+}
+
+.cpu-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.seat-name {
+  font-size: 12px;
+  color: #ccc;
+}
+
+.score-label {
+  font-size: 13px;
+  font-weight: bold;
+  color: #ffd700;
+}
+
+.riichi-stick {
+  display: none;
+  font-size: 10px;
+  color: #ffd700;
+  background: rgba(200,50,50,0.7);
+  padding: 1px 6px;
+  border-radius: 10px;
+}
+
+/* CPU 手牌（横並び・伏せ） */
+.cpu-hand-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px;
+  min-height: 42px;
+}
+
+.cpu-hand-row .tile {
+  width: 28px;
+  height: 38px;
+  font-size: 14px;
+}
+
+/* ====== 捨て牌エリア ====== */
+.discard-area {
+  background: rgba(0,0,0,0.2);
+  border-radius: 6px;
+  padding: 4px;
+  min-height: 32px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px;
+  align-content: flex-start;
+}
+
+.discard-area .tile {
+  width: 24px;
+  height: 34px;
+  font-size: 12px;
+}
+
+.discard-area .tile .tile-sub {
+  font-size: 7px;
+}
+
+/* ====== 副露 ====== */
+.meld-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.meld {
+  display: flex;
+  gap: 1px;
+  background: rgba(255,255,255,0.08);
+  padding: 2px;
+  border-radius: 4px;
+}
+
+/* ====== プレイヤーエリア ====== */
+#player-area {
+  background: rgba(0,0,0,0.3);
+  border-radius: 8px;
+  padding: 8px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+#player-hand {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 3px;
+  padding: 6px 0;
+  min-height: 68px;
+  overflow-x: auto;
 }
 
 /* ====== 牌 ====== */
 .tile {
-  width: 36px;
-  height: 48px;
+  width: 38px;
+  height: 52px;
   background: linear-gradient(145deg, #f5f0e0, #e8dfc0);
   border: 1px solid #888;
   border-radius: 4px;
@@ -121,7 +185,7 @@ h1 {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  font-size: 18px;
+  font-size: 20px;
   line-height: 1;
   cursor: default;
   box-shadow: 1px 2px 3px rgba(0,0,0,0.5);
@@ -129,6 +193,7 @@ h1 {
   transition: transform 0.1s;
   user-select: none;
   color: #111;
+  flex-shrink: 0;
 }
 
 .tile[data-suit="m"] { color: #c00; }
@@ -140,19 +205,20 @@ h1 {
   position: absolute;
   bottom: 2px;
   right: 3px;
-  opacity: 0.7;
+  opacity: 0.65;
 }
 
-.tile.honor { color: #333; }
-.tile.haku { color: #111; }
+.tile.honor { color: #333; font-size: 16px; }
 .tile.hatsu { color: #050; }
-.tile.chun { color: #c00; }
+.tile.chun  { color: #c00; }
 
-.tile.red-dora { background: linear-gradient(145deg, #ffe0e0, #ffc0c0); }
+.tile.red-dora {
+  background: linear-gradient(145deg, #ffe0e0, #ffc0c0);
+}
+
 .tile.face-down {
   background: linear-gradient(145deg, #2255aa, #1133aa);
   color: transparent;
-  font-size: 28px;
 }
 .tile.face-down::after {
   content: '';
@@ -163,95 +229,36 @@ h1 {
 }
 
 .tile.clickable { cursor: pointer; }
-.tile.clickable:hover { transform: translateY(-6px); box-shadow: 2px 4px 6px rgba(0,0,0,0.6); }
-
-.tile.highlight { outline: 2px solid #ffd700; }
-.tile.drawn { transform: translateY(-8px); }
-
-/* ====== CPU サイドパネル ====== */
-.cpu-side {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 4px;
-  padding: 4px;
+.tile.clickable:hover {
+  transform: translateY(-8px);
+  box-shadow: 2px 5px 8px rgba(0,0,0,0.6);
 }
 
-.cpu-west { grid-area: cpu-west; }
-.cpu-east { grid-area: cpu-east; }
-
-.cpu-hand-vertical {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
+.tile.highlight {
+  outline: 2px solid #ffd700;
+  outline-offset: 1px;
 }
 
-.cpu-hand-vertical .tile {
-  width: 28px;
-  height: 38px;
-  font-size: 14px;
+.tile.drawn {
+  transform: translateY(-8px);
+  margin-left: 8px;
 }
 
-.player-label {
-  font-size: 11px;
-  color: #ccc;
-  text-align: center;
-}
-
-.score-label {
-  font-size: 13px;
-  font-weight: bold;
-  color: #ffd700;
-}
-
-/* ====== プレイヤーエリア ====== */
-#player-area {
-  grid-area: player-area;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 4px;
-}
-
-#player-hand {
-  display: flex;
-  flex-wrap: nowrap;
-  gap: 3px;
-  padding: 6px;
-  background: rgba(0,0,0,0.2);
-  border-radius: 8px;
-  min-height: 64px;
-}
-
-#melds-0 {
-  display: flex;
-  gap: 4px;
-}
-
-.meld {
-  display: flex;
-  gap: 1px;
-  background: rgba(255,255,255,0.1);
-  padding: 2px;
-  border-radius: 4px;
-}
-
-/* ====== コントロール ====== */
+/* ====== アクションボタン ====== */
 #controls {
-  grid-area: controls;
   display: flex;
   justify-content: center;
-  gap: 8px;
+  gap: 10px;
   padding: 6px;
   flex-wrap: wrap;
 }
 
 .action-btn {
-  padding: 8px 18px;
-  font-size: 15px;
+  padding: 10px 22px;
+  font-size: 16px;
   font-weight: bold;
   border: none;
-  border-radius: 6px;
+  border-radius: 8px;
   cursor: pointer;
   transition: all 0.15s;
   min-width: 80px;
@@ -265,36 +272,27 @@ h1 {
 
 .action-btn:not(:disabled):hover { transform: translateY(-2px); }
 
-#btn-tsumo { background: #e8a020; color: #fff; }
+#btn-tsumo  { background: #e8a020; color: #fff; }
 #btn-riichi { background: #c02020; color: #fff; }
-#btn-ron { background: #800080; color: #fff; }
-#btn-pon { background: #2070c0; color: #fff; }
-#btn-pass { background: #555; color: #fff; }
-
-/* ====== リーチ棒 ====== */
-.riichi-stick {
-  display: none;
-  font-size: 11px;
-  color: #ffd700;
-  background: rgba(0,0,0,0.5);
-  padding: 2px 6px;
-  border-radius: 4px;
-}
+#btn-ron    { background: #800080; color: #fff; }
+#btn-pon    { background: #2070c0; color: #fff; }
+#btn-pass   { background: #555;    color: #fff; }
 
 /* ====== ゲームログ ====== */
 #game-log {
   position: fixed;
-  right: 8px;
-  top: 40px;
-  width: 170px;
-  background: rgba(0,0,0,0.6);
-  border-radius: 6px;
-  padding: 6px;
+  right: 10px;
+  top: 50px;
+  width: 160px;
+  background: rgba(0,0,0,0.65);
+  border-radius: 8px;
+  padding: 8px;
   font-size: 11px;
-  max-height: 300px;
+  max-height: 320px;
   overflow-y: auto;
   color: #ccc;
-  line-height: 1.6;
+  line-height: 1.7;
+  z-index: 10;
 }
 
 #game-log div:first-child { color: #ffd700; }
@@ -304,24 +302,24 @@ h1 {
   display: none;
   position: fixed;
   inset: 0;
-  background: rgba(0,0,0,0.7);
+  background: rgba(0,0,0,0.72);
   z-index: 100;
   align-items: center;
   justify-content: center;
 }
 
 .dialog {
-  background: #1a3a1a;
+  background: #163016;
   border: 2px solid #ffd700;
-  border-radius: 12px;
-  padding: 24px;
-  max-width: 500px;
-  width: 90vw;
+  border-radius: 14px;
+  padding: 28px;
+  max-width: 520px;
+  width: 92vw;
   text-align: center;
 }
 
-.dialog h2 { color: #ffd700; font-size: 24px; margin-bottom: 12px; }
-.dialog p { margin: 6px 0; color: #ccc; }
+.dialog h2 { color: #ffd700; font-size: 26px; margin-bottom: 12px; }
+.dialog p  { margin: 6px 0; color: #ccc; font-size: 13px; }
 
 .win-hand-row {
   display: flex;
@@ -332,9 +330,9 @@ h1 {
 }
 
 .dialog-btn {
-  margin-top: 16px;
-  padding: 10px 30px;
-  font-size: 16px;
+  margin-top: 18px;
+  padding: 11px 32px;
+  font-size: 17px;
   background: #ffd700;
   color: #000;
   border: none;
@@ -347,6 +345,9 @@ h1 {
 
 /* ====== レスポンシブ ====== */
 @media (max-width: 600px) {
-  #board { width: 100vw; grid-template-columns: 80px 1fr 80px; }
-  .tile { width: 28px; height: 38px; font-size: 14px; }
+  #board { width: 100vw; }
+  .tile { width: 28px; height: 40px; font-size: 14px; }
+  .cpu-hand-row .tile { width: 22px; height: 32px; font-size: 11px; }
+  .discard-area .tile { width: 20px; height: 28px; }
+  #game-log { display: none; }
 }
