@@ -13,12 +13,7 @@ body {
   align-items: center;
 }
 
-h1 {
-  font-size: 20px;
-  padding: 8px;
-  color: #ffd700;
-  letter-spacing: 2px;
-}
+h1 { font-size: 20px; padding: 8px; color: #ffd700; letter-spacing: 2px; }
 
 /* ====== ボード ====== */
 #board {
@@ -44,10 +39,7 @@ h1 {
 .label-text, #remaining { font-size: 11px; color: #aaa; }
 
 /* ====== CPU 3人ライン ====== */
-#cpu-row {
-  display: flex;
-  gap: 8px;
-}
+#cpu-row { display: flex; gap: 8px; }
 
 .cpu-panel {
   flex: 1;
@@ -60,23 +52,14 @@ h1 {
   min-width: 0;
 }
 
-.cpu-header {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  flex-wrap: wrap;
-}
-
-.seat-name   { font-size: 12px; color: #ccc; }
+.cpu-header { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.seat-name  { font-size: 12px; color: #ccc; }
 .score-label { font-size: 13px; font-weight: bold; color: #ffd700; }
-
 .riichi-stick {
   display: none;
-  font-size: 10px;
-  color: #fff;
+  font-size: 10px; color: #fff;
   background: #c03020;
-  padding: 1px 6px;
-  border-radius: 10px;
+  padding: 1px 6px; border-radius: 10px;
 }
 
 /* CPU 手牌：横一列 */
@@ -87,56 +70,134 @@ h1 {
   overflow: hidden;
 }
 
-/* ====== 牌（Unicode 絵文字ベース）====== */
+/* ====== 牌ベース（CSS カラー牌）====== */
 .tile {
-  font-size: 36px;
-  line-height: 1;
-  width: 32px;
-  height: 40px;
-  display: inline-flex;
+  width: 38px;
+  height: 52px;
+  background: linear-gradient(160deg, #fefef2 0%, #f0e8d0 100%);
+  border: 1px solid #c0a878;
+  border-radius: 5px;
+  /* 3D 効果 */
+  box-shadow:
+    inset 0 1px 2px rgba(255,255,255,0.85),
+    0 3px 0 #9a7850,
+    0 4px 6px rgba(0,0,0,0.4);
+  display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
   cursor: default;
   position: relative;
-  transition: transform 0.1s;
   user-select: none;
   flex-shrink: 0;
+  /* transition なし → 振動防止 */
 }
 
-/* 赤ドラ：右下に赤マーク */
+.tile-face {
+  font-size: 22px;
+  line-height: 1;
+  font-weight: bold;
+  font-family: 'Hiragino Mincho ProN', 'YuMincho', 'MS Mincho', serif;
+}
+
+.tile-sub {
+  font-size: 9px;
+  line-height: 1;
+  margin-top: 1px;
+  font-family: 'Hiragino Mincho ProN', 'YuMincho', 'MS Mincho', serif;
+}
+
+/* ---- 萬子（赤）---- */
+.suit-m .tile-face { color: #cc1111; }
+.suit-m .tile-sub  { color: #cc1111; opacity: 0.8; }
+
+/* ---- 筒子（青）---- */
+.suit-p .tile-face { color: #1144cc; }
+.suit-p .tile-sub  { color: #1144cc; opacity: 0.8; }
+
+/* ---- 索子（緑）---- */
+.suit-s .tile-face { color: #117722; }
+.suit-s .tile-sub  { color: #117722; opacity: 0.8; }
+
+/* ---- 字牌 ---- */
+.suit-z[data-num="1"] .tile-face { color: #1144cc; font-size: 20px; } /* 東 */
+.suit-z[data-num="2"] .tile-face { color: #cc1111; font-size: 20px; } /* 南 */
+.suit-z[data-num="3"] .tile-face { color: #117722; font-size: 20px; } /* 西 */
+.suit-z[data-num="4"] .tile-face { color: #111155; font-size: 20px; } /* 北 */
+.suit-z[data-num="5"] .tile-face { color: #555;    font-size: 20px; } /* 白 */
+.suit-z[data-num="6"] .tile-face { color: #117722; font-size: 20px; } /* 發 */
+.suit-z[data-num="7"] .tile-face { color: #cc1111; font-size: 22px; } /* 中 */
+
+/* ---- 赤ドラ（赤背景 + ★マーク）---- */
+.tile.red-dora {
+  background: linear-gradient(160deg, #ff9090 0%, #e83030 100%);
+  border-color: #aa0000;
+  box-shadow:
+    inset 0 1px 2px rgba(255,200,200,0.8),
+    0 3px 0 #880000,
+    0 4px 6px rgba(0,0,0,0.4);
+}
+.tile.red-dora .tile-face { color: #fff !important; text-shadow: 0 1px 2px rgba(0,0,0,0.5); }
+.tile.red-dora .tile-sub  { color: #ffdddd !important; }
 .tile.red-dora::after {
   content: '★';
   position: absolute;
-  bottom: 1px;
-  right: 1px;
-  font-size: 8px;
-  color: #e00;
+  top: 2px; right: 3px;
+  font-size: 7px;
+  color: #ffd700;
   line-height: 1;
   pointer-events: none;
 }
 
-.tile.face-down { font-size: 36px; }
+/* ---- 裏向き（CPU 手牌）---- */
+.tile.face-down {
+  background: linear-gradient(160deg, #3366cc 0%, #1133aa 100%);
+  border-color: #1133aa;
+  box-shadow:
+    inset 0 1px 2px rgba(120,160,255,0.4),
+    0 3px 0 #091155,
+    0 4px 6px rgba(0,0,0,0.45);
+}
+.tile.face-down::before {
+  content: '';
+  position: absolute;
+  inset: 4px;
+  border: 1px solid rgba(255,255,255,0.2);
+  border-radius: 2px;
+}
 
+/* ---- インタラクション ---- */
 .tile.clickable { cursor: pointer; }
 .tile.clickable:hover {
   transform: translateY(-10px);
-  filter: brightness(1.1);
+  box-shadow:
+    inset 0 1px 2px rgba(255,255,255,0.85),
+    0 3px 0 #9a7850,
+    0 8px 12px rgba(0,0,0,0.45);
 }
 
 .tile.highlight {
-  filter: drop-shadow(0 0 5px #ffd700);
+  box-shadow:
+    inset 0 1px 2px rgba(255,255,255,0.85),
+    0 3px 0 #9a7850,
+    0 0 0 2px #ffd700,
+    0 4px 8px rgba(0,0,0,0.4);
 }
 
+/* drawn: アニメーションなし（振動防止） */
 .tile.drawn {
   transform: translateY(-10px);
   margin-left: 8px;
 }
 
-/* CPU 手牌の牌は小さめ */
+/* ---- CPU 手牌の牌（小さく）---- */
 .cpu-hand-row .tile {
-  font-size: 22px;
   width: 20px;
-  height: 26px;
+  height: 28px;
+  box-shadow:
+    inset 0 1px 1px rgba(255,255,255,0.5),
+    0 2px 0 #091155,
+    0 3px 4px rgba(0,0,0,0.4);
 }
 
 /* ====== 捨て牌エリア ====== */
@@ -147,25 +208,27 @@ h1 {
   min-height: 28px;
   display: flex;
   flex-wrap: wrap;
-  gap: 1px;
+  gap: 2px;
   align-content: flex-start;
 }
 
 .discard-tile {
-  font-size: 22px !important;
-  width: 20px !important;
-  height: 26px !important;
+  width: 26px !important;
+  height: 36px !important;
+  box-shadow:
+    inset 0 1px 1px rgba(255,255,255,0.7),
+    0 2px 0 #9a7850,
+    0 3px 4px rgba(0,0,0,0.35) !important;
 }
+.discard-tile .tile-face { font-size: 16px !important; }
+.discard-tile .tile-sub  { font-size: 7px !important; }
 
 /* ====== 副露 ====== */
 .meld-row { display: flex; flex-wrap: wrap; gap: 4px; }
-
 .meld {
-  display: flex;
-  gap: 1px;
+  display: flex; gap: 1px;
   background: rgba(255,255,255,0.08);
-  padding: 2px;
-  border-radius: 4px;
+  padding: 2px; border-radius: 4px;
 }
 
 /* ====== プレイヤーエリア ====== */
@@ -181,9 +244,9 @@ h1 {
 #player-hand {
   display: flex;
   flex-wrap: nowrap;
-  gap: 2px;
-  padding: 4px 0;
-  min-height: 52px;
+  gap: 3px;
+  padding: 4px 0 14px;
+  min-height: 68px;
   overflow-x: auto;
 }
 
@@ -203,11 +266,10 @@ h1 {
   border: none;
   border-radius: 8px;
   cursor: pointer;
-  transition: all 0.15s;
   min-width: 80px;
+  transition: transform 0.1s, opacity 0.1s;
 }
-
-.action-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+.action-btn:disabled { opacity: 0.3; cursor: not-allowed; transform: none !important; }
 .action-btn:not(:disabled):hover { transform: translateY(-2px); }
 
 #btn-tsumo  { background: #e8a020; color: #fff; }
@@ -219,8 +281,7 @@ h1 {
 /* ====== ゲームログ ====== */
 #game-log {
   position: fixed;
-  right: 10px;
-  top: 50px;
+  right: 10px; top: 50px;
   width: 160px;
   background: rgba(0,0,0,0.65);
   border-radius: 8px;
@@ -237,52 +298,42 @@ h1 {
 /* ====== ダイアログ ====== */
 .dialog-overlay {
   display: none;
-  position: fixed;
-  inset: 0;
+  position: fixed; inset: 0;
   background: rgba(0,0,0,0.72);
   z-index: 100;
-  align-items: center;
-  justify-content: center;
+  align-items: center; justify-content: center;
 }
-
 .dialog {
   background: #163016;
   border: 2px solid #ffd700;
   border-radius: 14px;
   padding: 28px;
-  max-width: 540px;
-  width: 92vw;
+  max-width: 540px; width: 92vw;
   text-align: center;
 }
-
 .dialog h2 { color: #ffd700; font-size: 24px; margin-bottom: 10px; }
 .dialog p  { margin: 5px 0; color: #ccc; font-size: 13px; }
 
 .win-hand-row {
-  display: flex;
-  flex-wrap: wrap;
+  display: flex; flex-wrap: wrap;
   justify-content: center;
-  gap: 2px;
-  margin: 10px 0;
+  gap: 3px; margin: 10px 0;
 }
 
 .dialog-btn {
   margin-top: 16px;
-  padding: 11px 32px;
-  font-size: 17px;
-  background: #ffd700;
-  color: #000;
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
-  font-weight: bold;
+  padding: 11px 32px; font-size: 17px;
+  background: #ffd700; color: #000;
+  border: none; border-radius: 8px;
+  cursor: pointer; font-weight: bold;
 }
 .dialog-btn:hover { background: #ffcc00; }
 
 /* ====== レスポンシブ ====== */
 @media (max-width: 600px) {
   #board { width: 100vw; }
-  .tile { font-size: 28px; width: 26px; height: 32px; }
-  .cpu-hand-row .tile { font-size: 16px; width: 15px; height: 20px; }
+  .tile { width: 30px; height: 42px; }
+  .tile-face { font-size: 17px !important; }
+  .cpu-hand-row .tile { width: 15px; height: 22px; }
   #game-log { display: none; }
 }

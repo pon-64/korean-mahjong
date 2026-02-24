@@ -7,13 +7,14 @@ import { STATE, SEATS } from './game.js';
 let game = null;
 export function initUI(g) { game = g; }
 
-// Unicode 麻雀牌マッピング
-const TILE_CHAR = {
-  m: ['', '🀇', '🀈', '🀉', '🀊', '🀋', '🀌', '🀍', '🀎', '🀏'],
-  p: ['', '🀙', '🀚', '🀛', '🀜', '🀝', '🀞', '🀟', '🀠', '🀡'],
-  s: ['', '🀐', '🀑', '🀒', '🀓', '🀔', '🀕', '🀖', '🀗', '🀘'],
-  z: ['', '🀀', '🀁', '🀂', '🀃', '🀆', '🀅', '🀄'],
+// 牌の表示文字
+const NUM_CHARS = {
+  m: ['', '一', '二', '三', '四', '五', '六', '七', '八', '九'],
+  p: ['', '①', '②', '③', '④', '⑤', '⑥', '⑦', '⑧', '⑨'],
+  s: ['', '1', '2', '3', '4', '5', '6', '7', '8', '9'],
+  z: ['', '東', '南', '西', '北', '白', '發', '中'],
 };
+const SUB_CHARS = { m: '萬', p: '筒', s: '索' };
 
 /** 牌 DOM 要素を生成 */
 export function createTileEl(tile, opts = {}) {
@@ -22,11 +23,23 @@ export function createTileEl(tile, opts = {}) {
 
   if (opts.faceDown) {
     el.classList.add('face-down');
-    el.textContent = '🀫';
     return el;
   }
 
-  el.textContent = TILE_CHAR[tile.suit][tile.num];
+  el.classList.add(`suit-${tile.suit}`);
+  el.dataset.num = tile.num;
+
+  const face = document.createElement('span');
+  face.classList.add('tile-face');
+  face.textContent = NUM_CHARS[tile.suit][tile.num];
+  el.appendChild(face);
+
+  if (tile.suit !== 'z') {
+    const sub = document.createElement('span');
+    sub.classList.add('tile-sub');
+    sub.textContent = SUB_CHARS[tile.suit];
+    el.appendChild(sub);
+  }
 
   if (tile.isRed)     el.classList.add('red-dora');
   if (opts.highlight) el.classList.add('highlight');
@@ -80,20 +93,18 @@ function renderPlayerHand(state) {
   if (!el) return;
   el.innerHTML = '';
 
-  const hand     = sortTiles(state.hands[0]);
+  const hand    = sortTiles(state.hands[0]);
   const isAction = state.state === STATE.PLAYER_ACTION || state.state === STATE.WAIT_DISCARD;
-  const meldCnt  = state.melds[0].length;
-
-  // テンパイ待ち牌ハイライト（リーチ中 or テンパイ時）
-  const closed = getClosedTiles(state, 0);
-  const sh     = calcShanten(closed, meldCnt);
-  const waits  = sh === 0 ? getTenpaiWaits(closed, meldCnt) : [];
+  const meldCnt = state.melds[0].length;
+  const closed  = getClosedTiles(state, 0);
+  const sh      = calcShanten(closed, meldCnt);
+  const waits   = sh === 0 ? getTenpaiWaits(closed, meldCnt) : [];
 
   for (const tile of hand) {
     const isWait = waits.some(w => w.suit === tile.suit && w.num === tile.num);
     const tileEl = createTileEl(tile, {
       clickable: isAction,
-      highlight: isWait && sh === 0,
+      highlight: isWait,
       onClick:   isAction ? t => game.playerDiscard(t) : null,
     });
     if (state.drawnTile && tile.id === state.drawnTile.id) {
@@ -155,47 +166,39 @@ function renderRiichiMarkers(state) {
 
 function renderButtons(state) {
   const isPlayerAction = state.state === STATE.PLAYER_ACTION;
-  const isWaitDiscard  = state.state === STATE.WAIT_DISCARD;
   const isCheckClaims  = state.state === STATE.CHECK_CLAIMS;
+  const meldCnt        = state.melds[0].length;
 
-  const meldCnt = state.melds[0].length;
-
-  // ツモ
   const btnTsumo = document.getElementById('btn-tsumo');
   if (btnTsumo) {
     btnTsumo.disabled = !(isPlayerAction && isWinningHand(state.hands[0], meldCnt));
   }
 
-  // リーチ
   const btnRiichi = document.getElementById('btn-riichi');
   if (btnRiichi) {
-    const closed    = getClosedTiles(state, 0);
-    const canRiichi = isPlayerAction && !state.riichi[0] &&
-                      meldCnt === 0 && calcShanten(closed, 0) === 0;
-    btnRiichi.disabled = !canRiichi;
+    const closed = getClosedTiles(state, 0);
+    btnRiichi.disabled = !(isPlayerAction && !state.riichi[0] &&
+                           meldCnt === 0 && calcShanten(closed, 0) === 0);
   }
 
-  // ロン（★ CHECK_CLAIMS 時のみ有効）
   const btnRon = document.getElementById('btn-ron');
   if (btnRon) {
-    const canRon = isCheckClaims &&
-                   state.pendingClaims.some(c => c.player === 0 && c.type === 'ron');
-    btnRon.disabled = !canRon;
+    btnRon.disabled = !(isCheckClaims &&
+      state.pendingClaims.some(c => c.player === 0 && c.type === 'ron'));
   }
 
-  // ポン
   const btnPon = document.getElementById('btn-pon');
   if (btnPon) {
-    const canPon = isCheckClaims &&
-                   state.pendingClaims.some(c => c.player === 0 &&
-                     (c.type === 'pon' || c.type === 'minkan'));
-    btnPon.disabled = !canPon;
+    btnPon.disabled = !(isCheckClaims &&
+      state.pendingClaims.some(c => c.player === 0 &&
+        (c.type === 'pon' || c.type === 'minkan')));
   }
 
-  // パス（★ CHECK_CLAIMS 時のみ有効）
+  // ★ パスはプレイヤーに実際の選択肢がある時だけ有効
   const btnPass = document.getElementById('btn-pass');
   if (btnPass) {
-    btnPass.disabled = !isCheckClaims;
+    btnPass.disabled = !(isCheckClaims &&
+      state.pendingClaims.some(c => c.player === 0));
   }
 }
 
@@ -214,12 +217,12 @@ export function showWinDialog(result) {
   document.getElementById('win-type').textContent = winTypeName;
 
   const parts = [`基礎点: ${sc.base}`];
-  if (sc.riichi) parts.push(`リーチ: +${sc.riichi}`);
-  if (sc.red)    parts.push(`赤ドラ: +${sc.red}`);
-  if (sc.omote)  parts.push(`表ドラ: +${sc.omote}`);
-  if (sc.ura)    parts.push(`裏ドラ: +${sc.ura}`);
-  parts.push(`合計: ${sc.total}点`);
-  document.getElementById('win-score').textContent = parts.join('  ');
+  if (sc.riichi) parts.push(`リーチ +${sc.riichi}`);
+  if (sc.red)    parts.push(`赤ドラ +${sc.red}`);
+  if (sc.omote)  parts.push(`表ドラ +${sc.omote}`);
+  if (sc.ura)    parts.push(`裏ドラ +${sc.ura}`);
+  parts.push(`合計 ${sc.total}点`);
+  document.getElementById('win-score').textContent = parts.join('  /  ');
 
   const handEl = document.getElementById('win-hand');
   handEl.innerHTML = '';

@@ -182,7 +182,6 @@ export class Game {
     this.lastDiscard     = tile;
     this.lastDiscardFrom = playerIdx;
 
-    this.addLog(`${SEATS[playerIdx]} 打: ${tileName(tile)}`);
     this.onUpdate('discard', { player: playerIdx, tile });
 
     this._checkClaims(playerIdx, tile);
