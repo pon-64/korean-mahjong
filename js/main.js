@@ -1,7 +1,7 @@
 // main.js - エントリーポイント
 
 import { Game, STATE } from './game.js';
-import { initUI, render, showWinDialog, hideWinDialog, showDrawDialog, hideDrawDialog } from './ui.js';
+import { initUI, render, showWinDialog, hideWinDialog, showDrawDialog, hideDrawDialog, showReviewDialog, hideReviewDialog } from './ui.js';
 
 let game;
 
@@ -44,5 +44,17 @@ document.addEventListener('DOMContentLoaded', () => {
     hideDrawDialog();
     game.nextRound();
     setTimeout(() => render(game.getState()), 150);
+  });
+
+  document.getElementById('btn-review-win').addEventListener('click', () => {
+    showReviewDialog(game.getState().reviewData);
+  });
+
+  document.getElementById('btn-review-draw').addEventListener('click', () => {
+    showReviewDialog(game.getState().reviewData);
+  });
+
+  document.getElementById('review-close-btn').addEventListener('click', () => {
+    hideReviewDialog();
   });
 });

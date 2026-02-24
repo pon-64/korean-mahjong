@@ -244,3 +244,90 @@ export function showWinDialog(result) {
 export function hideWinDialog()  { const d = document.getElementById('win-dialog');  if (d) d.style.display = 'none'; }
 export function showDrawDialog() { const d = document.getElementById('draw-dialog'); if (d) d.style.display = 'flex'; }
 export function hideDrawDialog() { const d = document.getElementById('draw-dialog'); if (d) d.style.display = 'none'; }
+
+// ====== 局振り返り ======
+
+const REVIEW_SEAT_NAMES = ['南（あなた）', '西（下家）', '北（対面）', '東（上家）'];
+
+export function showReviewDialog(reviewData) {
+  const overlay = document.getElementById('review-overlay');
+  const content = document.getElementById('review-content');
+  if (!overlay || !content || !reviewData) return;
+
+  content.innerHTML = '';
+
+  // プレイヤー表示順：上家(3) → 対面(2) → 下家(1) → 自分(0)
+  const order = [3, 2, 1, 0];
+
+  for (const i of order) {
+    const section = document.createElement('div');
+    section.classList.add('review-player');
+
+    // 名前 + リーチバッジ
+    const nameRow = document.createElement('div');
+    nameRow.classList.add('review-player-name');
+    nameRow.textContent = REVIEW_SEAT_NAMES[i];
+    if (reviewData.riichi[i]) {
+      const badge = document.createElement('span');
+      badge.classList.add('review-riichi-badge');
+      badge.textContent = 'リーチ';
+      nameRow.appendChild(badge);
+    }
+    section.appendChild(nameRow);
+
+    // 手牌（全員表向き）
+    const handLabel = document.createElement('div');
+    handLabel.classList.add('review-section-label');
+    handLabel.textContent = '手牌';
+    section.appendChild(handLabel);
+
+    const handRow = document.createElement('div');
+    handRow.classList.add('review-hand-row');
+    for (const t of reviewData.hands[i]) handRow.appendChild(createTileEl(t));
+    section.appendChild(handRow);
+
+    // 副露
+    if (reviewData.melds[i].length > 0) {
+      const meldLabel = document.createElement('div');
+      meldLabel.classList.add('review-section-label');
+      meldLabel.textContent = '副露';
+      section.appendChild(meldLabel);
+
+      const meldRow = document.createElement('div');
+      meldRow.classList.add('review-meld-row');
+      for (const meld of reviewData.melds[i]) {
+        const meldEl = document.createElement('div');
+        meldEl.classList.add('meld');
+        for (const t of meld.tiles) meldEl.appendChild(createTileEl(t));
+        meldRow.appendChild(meldEl);
+      }
+      section.appendChild(meldRow);
+    }
+
+    // 捨て牌
+    if (reviewData.discards[i].length > 0) {
+      const discardLabel = document.createElement('div');
+      discardLabel.classList.add('review-section-label');
+      discardLabel.textContent = '捨て牌';
+      section.appendChild(discardLabel);
+
+      const discardRow = document.createElement('div');
+      discardRow.classList.add('review-hand-row');
+      for (const t of reviewData.discards[i]) {
+        const el = createTileEl(t);
+        el.classList.add('discard-tile');
+        discardRow.appendChild(el);
+      }
+      section.appendChild(discardRow);
+    }
+
+    content.appendChild(section);
+  }
+
+  overlay.style.display = 'block';
+}
+
+export function hideReviewDialog() {
+  const d = document.getElementById('review-overlay');
+  if (d) d.style.display = 'none';
+}

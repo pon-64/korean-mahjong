@@ -98,7 +98,10 @@
       <div style="font-size:12px;color:#aaa;margin-top:8px;">
         ドラ表示牌: <span id="win-doras" style="display:inline-flex;gap:2px;vertical-align:middle;"></span>
       </div>
-      <button class="dialog-btn" id="btn-next-round">次の局へ</button>
+      <div style="display:flex;gap:10px;justify-content:center;margin-top:16px;">
+        <button class="dialog-btn" id="btn-review-win" style="background:#4a8a4a;color:#fff;">振り返り</button>
+        <button class="dialog-btn" id="btn-next-round">次の局へ</button>
+      </div>
     </div>
   </div>
 
@@ -107,7 +110,19 @@
     <div class="dialog">
       <h2>流局</h2>
       <p>誰も和了できませんでした</p>
-      <button class="dialog-btn" id="btn-next-round-draw">次の局へ</button>
+      <div style="display:flex;gap:10px;justify-content:center;margin-top:16px;">
+        <button class="dialog-btn" id="btn-review-draw" style="background:#4a8a4a;color:#fff;">振り返り</button>
+        <button class="dialog-btn" id="btn-next-round-draw">次の局へ</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 局振り返りオーバーレイ -->
+  <div id="review-overlay">
+    <div id="review-inner">
+      <h2>局振り返り</h2>
+      <div id="review-content"></div>
+      <button id="review-close-btn">閉じる</button>
     </div>
   </div>
 

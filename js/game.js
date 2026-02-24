@@ -41,6 +41,7 @@ export class Game {
     this.pendingClaims = [];
     this.log           = [];
     this.winResult     = null;
+    this.reviewData    = null;
 
     const dealt = this.wall.deal(PLAYERS);
     for (let i = 0; i < PLAYERS; i++) this.hands[i] = sortTiles(dealt[i]);
@@ -397,12 +398,31 @@ export class Game {
       winTypeName: getWinType(hand, meldCnt),
     };
 
+    // 局振り返り用スナップショット
+    this.reviewData = {
+      hands: this.hands.map((h, i) => {
+        const tiles = sortTiles([...h]);
+        if (i === winnerIdx && winType === 'ron') tiles.push(this.lastDiscard);
+        return tiles;
+      }),
+      melds:    this.melds.map(ms => ms.map(m => ({ ...m, tiles: [...m.tiles] }))),
+      discards: this.discards.map(d => [...d]),
+      riichi:   [...this.riichi],
+    };
+
     this.addLog(`${SEATS[winnerIdx]} ${winType === 'ron' ? 'ロン' : 'ツモ'}和了！ ${scoreResult.total}点`);
     this.state = STATE.WIN;
     this.onUpdate('win', this.winResult);
   }
 
   _drawGame() {
+    // 局振り返り用スナップショット
+    this.reviewData = {
+      hands:    this.hands.map(h => sortTiles([...h])),
+      melds:    this.melds.map(ms => ms.map(m => ({ ...m, tiles: [...m.tiles] }))),
+      discards: this.discards.map(d => [...d]),
+      riichi:   [...this.riichi],
+    };
     this.addLog('流局');
     this.state = STATE.DRAW_GAME;
     this.onUpdate('draw_game', {});
@@ -433,6 +453,7 @@ export class Game {
       winResult: this.winResult, round: this.round,
       lastDiscard: this.lastDiscard, lastDiscardFrom: this.lastDiscardFrom,
       pendingClaims: this.pendingClaims,
+      reviewData: this.reviewData,
     };
   }
 }
