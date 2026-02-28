@@ -4,86 +4,100 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>韓国麻雀 - Paradise City ルール</title>
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="style.css?v=8">
 </head>
 <body>
-  <h1>韓国麻雀 Paradise City</h1>
 
   <div id="board">
+    <div id="table-surface">
 
-    <!-- 上部情報バー -->
-    <div id="top-info">
-      <div id="dora-area">
-        <span class="label-text">ドラ表示:</span>
-        <div id="dora-indicators"></div>
-      </div>
-      <div id="remaining">残り -- 枚</div>
-      <div class="label-text">局: <span id="round-num">1</span></div>
-    </div>
-
-    <!-- CPU 3人ライン（上家・対面・下家） -->
-    <div id="cpu-row">
-
-      <!-- 上家（東 / index3）: 左 -->
-      <div class="cpu-panel" id="panel-east">
-        <div class="cpu-header">
-          <span class="seat-name">東（上家）</span>
-          <span id="score-3" class="score-label">0pt</span>
-          <span id="riichi-3" class="riichi-stick">リーチ</span>
-        </div>
-        <div id="cpu-hand-3" class="cpu-hand-row"></div>
-        <div id="melds-3" class="meld-row"></div>
-        <div id="discards-3" class="discard-area"></div>
-      </div>
-
-      <!-- 対面（北 / index2）: 中央 -->
-      <div class="cpu-panel cpu-center" id="panel-north">
-        <div class="cpu-header">
+      <!-- 北エリア（上辺）-->
+      <div id="area-north">
+        <div class="nameplate nameplate-top">
           <span class="seat-name">北（対面）</span>
           <span id="score-2" class="score-label">0pt</span>
           <span id="riichi-2" class="riichi-stick">リーチ</span>
         </div>
-        <div id="cpu-hand-2" class="cpu-hand-row"></div>
-        <div id="melds-2" class="meld-row"></div>
-        <div id="discards-2" class="discard-area"></div>
-      </div>
-
-      <!-- 下家（西 / index1）: 右 -->
-      <div class="cpu-panel" id="panel-west">
-        <div class="cpu-header">
-          <span class="seat-name">西（下家）</span>
-          <span id="score-1" class="score-label">0pt</span>
-          <span id="riichi-1" class="riichi-stick">リーチ</span>
+        <div class="north-hand-row">
+          <div id="melds-2" class="meld-row"></div>
+          <div id="cpu-hand-2" class="cpu-hand-row"></div>
         </div>
-        <div id="cpu-hand-1" class="cpu-hand-row"></div>
-        <div id="melds-1" class="meld-row"></div>
-        <div id="discards-1" class="discard-area"></div>
       </div>
 
-    </div>
+      <!-- 中段 -->
+      <div id="middle-row">
 
-    <!-- プレイヤーエリア（南） -->
-    <div id="player-area">
-      <div class="cpu-header">
-        <span class="seat-name">南（あなた）</span>
-        <span id="score-0" class="score-label">0pt</span>
-        <span id="riichi-0" class="riichi-stick">リーチ</span>
+        <!-- 東エリア（左辺）-->
+        <div id="area-east">
+          <div class="nameplate nameplate-side">
+            <span class="seat-name">東</span>
+            <span id="score-3" class="score-label">0pt</span>
+            <span id="riichi-3" class="riichi-stick">R</span>
+          </div>
+          <div class="side-hand-col">
+            <div id="cpu-hand-3" class="cpu-hand-vert"></div>
+            <div id="melds-3" class="meld-vert"></div>
+          </div>
+        </div>
+
+        <!-- 中央テーブル（捨て牌 + 情報）-->
+        <div id="table-center">
+          <div id="discards-2" class="discard-area discard-north"></div>
+          <div id="center-mid-row">
+            <div id="discards-3" class="discard-area discard-east"></div>
+            <div id="center-deco">
+              <div id="dora-area">
+                <div class="label-text">ドラ</div>
+                <div id="dora-indicators"></div>
+              </div>
+              <div id="remaining">残り -- 枚</div>
+              <div class="label-text">局 <span id="round-num">1</span></div>
+            </div>
+            <div id="discards-1" class="discard-area discard-west"></div>
+          </div>
+          <div id="discards-0" class="discard-area discard-south"></div>
+        </div>
+
+        <!-- 西エリア（右辺）-->
+        <div id="area-west">
+          <div class="side-hand-col">
+            <div id="melds-1" class="meld-vert"></div>
+            <div id="cpu-hand-1" class="cpu-hand-vert"></div>
+          </div>
+          <div class="nameplate nameplate-side">
+            <span class="seat-name">西</span>
+            <span id="score-1" class="score-label">0pt</span>
+            <span id="riichi-1" class="riichi-stick">R</span>
+          </div>
+        </div>
+
       </div>
-      <div id="discards-0" class="discard-area"></div>
-      <div id="melds-0" class="meld-row"></div>
-      <div id="player-hand"></div>
-    </div>
+
+      <!-- 南エリア（下辺）-->
+      <div id="area-south">
+        <div class="south-hand-row">
+          <div id="player-hand"></div>
+          <div id="melds-0" class="meld-row"></div>
+        </div>
+        <div class="nameplate nameplate-bottom">
+          <span class="seat-name">南（あなた）</span>
+          <span id="score-0" class="score-label">0pt</span>
+          <span id="riichi-0" class="riichi-stick">リーチ</span>
+        </div>
+      </div>
+
+    </div><!-- /table-surface -->
 
     <!-- アクションボタン -->
     <div id="controls">
-      <button class="action-btn" id="btn-tsumo" disabled>ツモ</button>
+      <button class="action-btn" id="btn-tsumo"  disabled>ツモ</button>
       <button class="action-btn" id="btn-riichi" disabled>リーチ</button>
-      <button class="action-btn" id="btn-ron" disabled>ロン</button>
-      <button class="action-btn" id="btn-pon" disabled>ポン</button>
-      <button class="action-btn" id="btn-pass" disabled>パス</button>
+      <button class="action-btn" id="btn-ron"    disabled>ロン</button>
+      <button class="action-btn" id="btn-pon"    disabled>ポン</button>
+      <button class="action-btn" id="btn-pass"   disabled>パス</button>
     </div>
 
-  </div>
+  </div><!-- /board -->
 
   <!-- ゲームログ -->
   <div id="game-log"></div>
@@ -130,9 +144,9 @@
   <div class="dialog-overlay" id="start-screen" style="display:flex;">
     <div class="dialog" style="max-width:360px;">
       <h2 style="font-size:28px;">韓国麻雀</h2>
-      <p style="margin:8px 0 4px;color:#ffd700;font-size:13px;">Paradise City ルール v8.9</p>
+      <p style="margin:8px 0 4px;color:#c8a050;font-size:13px;">Paradise City ルール v8.9</p>
       <p style="color:#aaa;font-size:12px;margin-bottom:16px;">あなた（南）vs CPU 3人（東・西・北）</p>
-      <div style="font-size:12px;color:#bbb;text-align:left;margin-bottom:20px;line-height:1.8;">
+      <div style="font-size:12px;color:#bbb;text-align:left;margin-bottom:20px;line-height:1.9;">
         <div>・牌をクリックして打牌</div>
         <div>・ロン/ツモ/リーチ/ポンはボタンで操作</div>
         <div>・フリテン制限なし（韓麻ルール）</div>
@@ -142,6 +156,6 @@
     </div>
   </div>
 
-  <script type="module" src="js/main.js"></script>
+  <script type="module" src="js/main.js?v=6"></script>
 </body>
 </html>

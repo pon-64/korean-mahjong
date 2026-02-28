@@ -1,8 +1,9 @@
 // ui.js - DOM描画・イベント処理
 
-import { sortTiles } from './tiles.js';
-import { calcShanten, getTenpaiWaits, isWinningHand } from './hand.js';
-import { STATE, SEATS } from './game.js';
+import { sortTiles } from './tiles.js?v=2';
+import { calcShanten, getTenpaiWaits, isWinningHand } from './hand.js?v=2';
+import { STATE, SEATS } from './game.js?v=2';
+import { applyTileBackground } from './tileimage.js?v=3';
 
 let game = null;
 export function initUI(g) { game = g; }
@@ -29,17 +30,7 @@ export function createTileEl(tile, opts = {}) {
   el.classList.add(`suit-${tile.suit}`);
   el.dataset.num = tile.num;
 
-  const face = document.createElement('span');
-  face.classList.add('tile-face');
-  face.textContent = NUM_CHARS[tile.suit][tile.num];
-  el.appendChild(face);
-
-  if (tile.suit !== 'z') {
-    const sub = document.createElement('span');
-    sub.classList.add('tile-sub');
-    sub.textContent = SUB_CHARS[tile.suit];
-    el.appendChild(sub);
-  }
+  applyTileBackground(el, tile);
 
   if (tile.isRed)     el.classList.add('red-dora');
   if (opts.highlight) el.classList.add('highlight');
@@ -74,7 +65,7 @@ function renderDora(state) {
   const el = document.getElementById('dora-indicators');
   if (!el) return;
   el.innerHTML = '';
-  for (const d of state.doraIndicators) el.appendChild(createTileEl(d));
+  for (const d of state.doraIndicators) el.appendChild(createTileEl(d, { tileW: 28, tileH: 40 }));
 }
 
 function renderCpuHands(state) {
@@ -93,23 +84,41 @@ function renderPlayerHand(state) {
   if (!el) return;
   el.innerHTML = '';
 
-  const hand    = sortTiles(state.hands[0]);
-  const isAction = state.state === STATE.PLAYER_ACTION || state.state === STATE.WAIT_DISCARD;
-  const meldCnt = state.melds[0].length;
-  const closed  = getClosedTiles(state, 0);
-  const sh      = calcShanten(closed, meldCnt);
-  const waits   = sh === 0 ? getTenpaiWaits(closed, meldCnt) : [];
+  const hand      = state.hands[0];
+  const drawnId   = state.drawnTile?.id;
+  const isAction  = state.state === STATE.PLAYER_ACTION || state.state === STATE.WAIT_DISCARD;
+  const meldCnt   = state.melds[0].length;
 
-  for (const tile of hand) {
+  // ツモ牌を分離（シャンテン計算は全手牌で行う）
+  const restTiles = drawnId ? hand.filter(t => t.id !== drawnId) : hand;
+  const drawnTile = drawnId ? hand.find(t => t.id === drawnId)   : null;
+
+  const closed = getClosedTiles(state, 0);
+  const sh     = calcShanten(closed, meldCnt);
+  const waits  = sh === 0 ? getTenpaiWaits(closed, meldCnt) : [];
+
+  for (const tile of sortTiles(restTiles)) {
     const isWait = waits.some(w => w.suit === tile.suit && w.num === tile.num);
-    const tileEl = createTileEl(tile, {
+    el.appendChild(createTileEl(tile, {
+      clickable: isAction,
+      highlight: isWait,
+      onClick:   isAction ? t => game.playerDiscard(t) : null,
+    }));
+  }
+
+  // ツモ牌を右端に配置
+  if (drawnTile) {
+    const sep = document.createElement('div');
+    sep.className = 'drawn-sep';
+    el.appendChild(sep);
+
+    const isWait = waits.some(w => w.suit === drawnTile.suit && w.num === drawnTile.num);
+    const tileEl = createTileEl(drawnTile, {
       clickable: isAction,
       highlight: isWait,
       onClick:   isAction ? t => game.playerDiscard(t) : null,
     });
-    if (state.drawnTile && tile.id === state.drawnTile.id) {
-      tileEl.classList.add('drawn');
-    }
+    tileEl.classList.add('drawn');
     el.appendChild(tileEl);
   }
 }
@@ -124,8 +133,10 @@ function renderDiscards(state) {
     const el = document.getElementById(`discards-${i}`);
     if (!el) continue;
     el.innerHTML = '';
+    // 東(1)・西(3) は rotate90 で CSS が 36×26 → 他は 26×36
+    const isSide = (i === 1 || i === 3);
     for (const tile of state.discards[i]) {
-      const t = createTileEl(tile);
+      const t = createTileEl(tile, { tileW: isSide ? 36 : 26, tileH: isSide ? 26 : 36 });
       t.classList.add('discard-tile');
       el.appendChild(t);
     }
@@ -137,10 +148,14 @@ function renderMelds(state) {
     const el = document.getElementById(`melds-${i}`);
     if (!el) continue;
     el.innerHTML = '';
+    // 東(1)・西(3) の副露牌は CSS が 36×26
+    const isSide = (i === 1 || i === 3);
     for (const meld of state.melds[i]) {
       const meldEl = document.createElement('div');
       meldEl.classList.add('meld');
-      for (const t of meld.tiles) meldEl.appendChild(createTileEl(t));
+      for (const t of meld.tiles) {
+        meldEl.appendChild(createTileEl(t, { tileW: isSide ? 36 : 26, tileH: isSide ? 26 : 36 }));
+      }
       el.appendChild(meldEl);
     }
   }
@@ -333,7 +348,7 @@ export function showReviewDialog(reviewData) {
         else if (loss < 100)   wrap.classList.add('loss-medium');
         else                   wrap.classList.add('loss-bad');
 
-        const tileEl = createTileEl(tile);
+        const tileEl = createTileEl(tile, { tileW: 26, tileH: 36 });
         tileEl.classList.add('discard-tile');
         wrap.appendChild(tileEl);
 
