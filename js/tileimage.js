@@ -12,8 +12,8 @@ function tileFilename(tile) {
 
 export function applyTileBackground(el, tile) {
   const file = tileFilename(tile);
-  el.style.backgroundImage    = `url('images/tiles/${file}?v=2')`;
-  el.style.backgroundSize     = 'contain';
+  el.style.backgroundImage    = `url('images/tiles/${file}?v=3')`;
+  el.style.backgroundSize     = 'cover';
   el.style.backgroundRepeat   = 'no-repeat';
   el.style.backgroundPosition = 'center center';
 }
