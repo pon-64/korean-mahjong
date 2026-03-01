@@ -368,13 +368,13 @@ body {
   align-content: flex-start;
 }
 
-/* 北: 右→左、6枚1列・4列固定 */
+/* 北: 右下から左、折り返しで上へ（北から見た自然な並び） */
 .discard-north {
   width: 172px;
   height: 156px;
   align-self: center;
   flex-direction: row-reverse;
-  flex-wrap: wrap;
+  flex-wrap: wrap-reverse;
   align-content: flex-start;
 }
 
