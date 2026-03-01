@@ -270,10 +270,10 @@ body {
   overflow: visible;
   flex-shrink: 0;
 }
-/* 東西: CSS 42×30 → rotate90° 後の視覚サイズ 30×42 */
+/* 東西: CSS 30×42 → rotate90° 後の視覚サイズ 42×30 */
 .cpu-hand-vert .tile {
-  width: 42px !important;
-  height: 30px !important;
+  width: 30px !important;
+  height: 42px !important;
   box-shadow:
     inset 0 1px 1px rgba(120,160,255,0.3),
     0 1px 0 #091155,
@@ -315,10 +315,10 @@ body {
 .meld-vert .meld {
   flex-direction: column;
 }
-/* rotate90°後に26×36の見た目になるよう縦横スワップ */
+/* 26×36 → rotate90° 後の視覚サイズ 36×26 */
 .meld-vert .meld .tile {
-  width: 36px !important;
-  height: 26px !important;
+  width: 26px !important;
+  height: 36px !important;
 }
 
 /* ====================================================
@@ -380,7 +380,7 @@ body {
 
 /* 東: 上→下、6枚1列・4列固定（中央寄り） */
 .discard-east {
-  height: 172px;
+  height: 250px;
   min-width: 156px;
   align-self: center;
   flex-direction: column;
@@ -390,7 +390,7 @@ body {
 
 /* 西: 下→上、6枚1列・4列固定（中央寄り） */
 .discard-west {
-  height: 172px;
+  height: 250px;
   min-width: 156px;
   align-self: center;
   flex-direction: column-reverse;
@@ -697,7 +697,7 @@ body {
   #board { width: 100vw; border-radius: 0; border-left: none; border-right: none; }
   #area-east, #area-west { width: 68px; }
   .discard-south, .discard-north { width: 172px; }
-  .discard-east, .discard-west { max-height: 172px; }
+  .discard-east, .discard-west { max-height: 250px; }
   .tile { width: 30px; height: 42px; }
   .tile-face { font-size: 17px !important; }
   #game-log { display: none; }
