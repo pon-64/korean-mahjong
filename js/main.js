@@ -1,7 +1,7 @@
 // main.js - エントリーポイント
 
-import { Game, STATE } from './game.js?v=2';
-import { initUI, render, showWinDialog, hideWinDialog, showDrawDialog, hideDrawDialog, showReviewDialog, hideReviewDialog } from './ui.js?v=6';
+import { Game, STATE } from './game.js?v=3';
+import { initUI, render, showWinDialog, hideWinDialog, showDrawDialog, hideDrawDialog, showReviewDialog, hideReviewDialog } from './ui.js?v=7';
 
 let game;
 
@@ -32,6 +32,7 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('btn-riichi').addEventListener('click', () => game.playerRiichi());
   document.getElementById('btn-ron').addEventListener('click', () => game.playerRon());
   document.getElementById('btn-pon').addEventListener('click', () => game.playerPon());
+  document.getElementById('btn-kan').addEventListener('click', () => game.playerKan());
   document.getElementById('btn-pass').addEventListener('click', () => game.playerPass());
 
   document.getElementById('btn-next-round').addEventListener('click', () => {

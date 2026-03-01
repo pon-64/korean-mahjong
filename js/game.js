@@ -89,6 +89,15 @@ export class Game {
       }
     }
 
+    // 加槓
+    if (!this.riichi[playerIdx] && this.wall.kanCount < 4) {
+      const shokanTile = this._findShokanTile(playerIdx);
+      if (shokanTile && shouldKan(closed, shokanTile, meldCnt)) {
+        this._doShokan(playerIdx, shokanTile);
+        return;
+      }
+    }
+
     // 暗槓
     if (!this.riichi[playerIdx] && this.wall.kanCount < 4) {
       const kanTile = this._findAnkanTile(closed);
@@ -123,6 +132,47 @@ export class Game {
 
   _meldTilesFlat(playerIdx) {
     return this.melds[playerIdx].flatMap(m => m.tiles);
+  }
+
+  _findShokanTile(playerIdx) {
+    const closed = this._closedTiles(playerIdx);
+    for (const meld of this.melds[playerIdx]) {
+      if (meld.type !== 'pon') continue;
+      const match = closed.find(t => tilesEqual(t, meld.tiles[0]));
+      if (match) return match;
+    }
+    return null;
+  }
+
+  _doShokan(playerIdx, tile) {
+    const meldIdx = this.melds[playerIdx].findIndex(
+      m => m.type === 'pon' && tilesEqual(m.tiles[0], tile)
+    );
+    if (meldIdx === -1) return;
+
+    const handIdx = this.hands[playerIdx].findIndex(t => t.id === tile.id);
+    if (handIdx === -1) return;
+    this.hands[playerIdx].splice(handIdx, 1);
+
+    this.melds[playerIdx][meldIdx] = {
+      ...this.melds[playerIdx][meldIdx],
+      type: 'shokan',
+      tiles: [...this.melds[playerIdx][meldIdx].tiles, tile],
+    };
+
+    const supp = this.wall.drawKan();
+    if (supp) { this.drawnTile = supp; this.hands[playerIdx].push(supp); }
+
+    this.addLog(`${SEATS[playerIdx]} 加槓: ${tileName(tile)}`);
+    this.onUpdate('kan', { player: playerIdx });
+
+    if (playerIdx === 0) {
+      this.state = STATE.PLAYER_ACTION;
+      this.onUpdate('draw', { player: 0, tile: supp });
+    } else {
+      this.state = STATE.CPU_TURN;
+      setTimeout(() => this._cpuTurn(playerIdx), 500);
+    }
   }
 
   _findAnkanTile(closedTiles) {
@@ -275,6 +325,10 @@ export class Game {
   }
 
   _doPon(playerIdx, fromIdx, tile, type) {
+    // 鳴いた牌を捨て牌エリアから削除
+    const discIdx = this.discards[fromIdx].findLastIndex(t => t.id === tile.id);
+    if (discIdx !== -1) this.discards[fromIdx].splice(discIdx, 1);
+
     const needed = type === 'minkan' ? 3 : 2;
     let removed  = 0;
     const removedTiles = [];
@@ -376,6 +430,28 @@ export class Game {
     );
     if (!claim) return;
     this._doPon(0, this.lastDiscardFrom, this.lastDiscard, claim.type);
+  }
+
+  playerKan() {
+    if (this.currentPlayer !== 0) return;
+    if (this.state !== STATE.PLAYER_ACTION) return;
+    if (this.wall.kanCount >= 4) return;
+
+    // 加槓優先（ポンmeldに追加）
+    const shokanTile = this._findShokanTile(0);
+    if (shokanTile && !this.riichi[0]) {
+      this._doShokan(0, shokanTile);
+      return;
+    }
+
+    // 暗槓
+    if (!this.riichi[0]) {
+      const closed  = this._closedTiles(0);
+      const kanTile = this._findAnkanTile(closed);
+      if (kanTile) {
+        this._doAnkan(0, kanTile);
+      }
+    }
   }
 
   playerPass() {

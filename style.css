@@ -42,7 +42,7 @@ body {
   background: #1a4a24;
   padding: 6px;
   gap: 4px;
-  min-height: 720px;
+  height: 720px;
 }
 
 /* ====================================================
@@ -386,6 +386,7 @@ body {
   flex-direction: column;
   flex-wrap: wrap-reverse;
   align-content: flex-start;
+  gap: 2px 6px;
 }
 
 /* 西: 下→上、6枚1列・4列固定（中央寄り） */
@@ -396,6 +397,7 @@ body {
   flex-direction: column-reverse;
   flex-wrap: wrap;
   align-content: flex-start;
+  gap: 2px 6px;
 }
 
 /* ====================================================

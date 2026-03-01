@@ -2,8 +2,8 @@
 
 import { sortTiles } from './tiles.js?v=2';
 import { calcShanten, getTenpaiWaits, isWinningHand } from './hand.js?v=2';
-import { STATE, SEATS } from './game.js?v=2';
-import { applyTileBackground } from './tileimage.js?v=4';
+import { STATE, SEATS } from './game.js?v=3';
+import { applyTileBackground } from './tileimage.js?v=5';
 
 let game = null;
 export function initUI(g) { game = g; }
@@ -207,6 +207,23 @@ function renderButtons(state) {
     btnPon.disabled = !(isCheckClaims &&
       state.pendingClaims.some(c => c.player === 0 &&
         (c.type === 'pon' || c.type === 'minkan')));
+  }
+
+  const btnKan = document.getElementById('btn-kan');
+  if (btnKan) {
+    if (isPlayerAction && !state.riichi[0]) {
+      const kanClosed = getClosedTiles(state, 0);
+      const hasShokan = state.melds[0].some(
+        m => m.type === 'pon' &&
+             kanClosed.some(t => t.suit === m.tiles[0].suit && t.num === m.tiles[0].num)
+      );
+      const kanCnt = {};
+      for (const t of kanClosed) { const k = t.suit + t.num; kanCnt[k] = (kanCnt[k] || 0) + 1; }
+      const hasAnkan = Object.values(kanCnt).some(n => n >= 4);
+      btnKan.disabled = !(hasShokan || hasAnkan);
+    } else {
+      btnKan.disabled = true;
+    }
   }
 
   // ★ パスはプレイヤーに実際の選択肢がある時だけ有効
