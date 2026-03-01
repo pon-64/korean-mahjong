@@ -3,7 +3,7 @@
 import { sortTiles } from './tiles.js?v=2';
 import { calcShanten, getTenpaiWaits, isWinningHand } from './hand.js?v=2';
 import { STATE, SEATS } from './game.js?v=2';
-import { applyTileBackground } from './tileimage.js?v=3';
+import { applyTileBackground } from './tileimage.js?v=4';
 
 let game = null;
 export function initUI(g) { game = g; }
