@@ -334,14 +334,14 @@ body {
 .discard-north .discard-tile { transform: rotate(180deg); }
 
 .discard-east .discard-tile {
-  width: 36px !important;
-  height: 26px !important;
+  width: 26px !important;
+  height: 36px !important;
   transform: rotate(90deg);
 }
 
 .discard-west .discard-tile {
-  width: 36px !important;
-  height: 26px !important;
+  width: 26px !important;
+  height: 36px !important;
   transform: rotate(-90deg);
 }
 
