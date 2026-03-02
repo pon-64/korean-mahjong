@@ -607,93 +607,299 @@ body {
 .dialog-btn:hover { filter: brightness(1.1); }
 
 /* ====================================================
-   局振り返り
+   ゲームプレイ修正: ロン牌・リーチ牌
+   ==================================================== */
+/* ロン和了時: 振り込み牌を黄色ハイライト */
+.discard-tile.ron-tile {
+  box-shadow:
+    inset 0 1px 1px rgba(255,255,255,0.7),
+    0 0 0 2.5px #ffee00,
+    0 0 10px rgba(255,220,0,0.55),
+    0 2px 0 #9a7850,
+    0 3px 4px rgba(0,0,0,0.35) !important;
+}
+
+/* リーチ宣言牌 - 南(0): 横向き回転 */
+.riichi-discard-wrap {
+  display: inline-flex;
+  width: 36px;    /* 回転後の視覚幅に合わせる */
+  height: 28px;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.riichi-discard-south {
+  transform: rotate(90deg);
+  flex-shrink: 0;
+}
+
+/* 東西北のリーチ宣言牌: 緑枠マーカー */
+.riichi-discard-mark {
+  outline: 2px solid #44cc44;
+  outline-offset: 1px;
+}
+
+/* ====================================================
+   配譜検討（全面リニューアル）
    ==================================================== */
 #review-overlay {
   display: none;
   position: fixed; inset: 0;
-  background: rgba(0,0,0,0.88);
+  background: rgba(0,0,0,0.90);
   z-index: 200;
   overflow-y: auto;
-  padding: 20px 12px;
+  padding: 16px 12px 24px;
 }
 #review-inner {
-  max-width: 860px;
+  max-width: 900px;
   margin: 0 auto;
-  background: #0e2a10;
+  background: #0b2010;
   border: 2px solid #c8a050;
   border-radius: 14px;
-  padding: 24px;
+  padding: 0 0 20px;
+  overflow: hidden;
 }
-#review-inner h2 {
+
+/* ── ヘッダー ── */
+.rv-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 20px;
+  background: rgba(0,0,0,0.45);
+  border-bottom: 1px solid rgba(200,160,80,0.25);
+  flex-wrap: wrap;
+}
+.rv-title {
+  font-size: 16px;
+  font-weight: bold;
   color: #c8a050;
-  font-size: 22px;
+  flex-shrink: 0;
+}
+.rv-tabs {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+  flex: 1;
+}
+.rv-tab {
+  padding: 4px 10px;
+  font-size: 11px;
+  border: 1px solid rgba(200,160,80,0.3);
+  background: rgba(255,255,255,0.04);
+  color: #8a9a80;
+  border-radius: 14px;
+  cursor: pointer;
+}
+.rv-tab.active {
+  background: rgba(200,160,80,0.2);
+  border-color: #c8a050;
+  color: #c8a050;
+  font-weight: bold;
+}
+.rv-close {
+  padding: 4px 12px;
+  background: rgba(180,40,40,0.7);
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  flex-shrink: 0;
+}
+.rv-close:hover { background: rgba(200,50,50,0.9); }
+
+/* ── サマリー ── */
+.rv-summary {
+  padding: 12px 20px 6px;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+.rv-summary table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+.rv-summary th {
+  color: #c8a050;
+  padding: 4px 8px;
+  border-bottom: 1px solid rgba(200,160,80,0.25);
   text-align: center;
-  margin-bottom: 18px;
+  font-weight: bold;
 }
-.review-player {
-  background: rgba(0,0,0,0.25);
-  border-radius: 8px;
-  padding: 12px;
-  margin-bottom: 14px;
+.rv-summary td {
+  padding: 4px 8px;
+  text-align: center;
+  color: #bbb;
+  border-bottom: 1px solid rgba(255,255,255,0.04);
 }
-.review-player-name {
-  font-size: 14px; font-weight: bold; color: #c8a050;
-  margin-bottom: 8px;
-  display: flex; align-items: center; gap: 10px;
-}
-.review-riichi-badge {
-  font-size: 10px; background: #b02020; color: #fff;
-  padding: 1px 6px; border-radius: 10px;
-}
-.review-section-label { font-size: 11px; color: #7a8870; margin: 8px 0 4px; }
-.review-hand-row  { display: flex; flex-wrap: wrap; gap: 3px; align-items: flex-end; }
-.review-meld-row  { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
+.rv-summary tr:last-child td { border-bottom: none; }
 
-#review-close-btn {
-  display: block; margin: 20px auto 0;
-  padding: 11px 40px; font-size: 16px;
-  background: linear-gradient(180deg,#d8b040,#b08020);
-  color: #000; border: none; border-radius: 8px;
-  cursor: pointer; font-weight: bold;
+/* ── 現在ターン手牌 ── */
+#rv-hand {
+  padding: 14px 20px 8px;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+  min-height: 110px;
 }
-#review-close-btn:hover { filter: brightness(1.1); }
-
-/* ---- 捨て牌分析 ---- */
-.review-discard-row { display: flex; flex-wrap: wrap; gap: 4px; align-items: flex-start; }
-.review-tile-wrap   { display: inline-flex; flex-direction: column; align-items: center; gap: 2px; }
-
-.review-tile-wrap.loss-optimal .discard-tile {
-  box-shadow: inset 0 1px 1px rgba(255,255,255,0.7), 0 0 0 2px #44dd44,
-    0 2px 0 #9a7850, 0 3px 4px rgba(0,0,0,0.35);
+.rv-turn-lbl {
+  font-size: 12px;
+  color: #c8a050;
+  margin-bottom: 10px;
+  font-weight: bold;
 }
-.review-tile-wrap.loss-minor .discard-tile {
-  box-shadow: inset 0 1px 1px rgba(255,255,255,0.7), 0 0 0 2px rgba(255,220,50,0.4),
-    0 2px 0 #9a7850, 0 3px 4px rgba(0,0,0,0.35);
-}
-.review-tile-wrap.loss-medium .discard-tile {
-  box-shadow: inset 0 1px 1px rgba(255,255,255,0.7), 0 0 0 2px #ffcc00,
-    0 2px 0 #9a7850, 0 3px 4px rgba(0,0,0,0.35);
-}
-.review-tile-wrap.loss-bad .discard-tile {
-  box-shadow: inset 0 1px 1px rgba(255,255,255,0.7), 0 0 0 2px #ff3300,
-    0 2px 0 #9a7850, 0 3px 4px rgba(0,0,0,0.35);
+.rv-hand-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: flex-end;
 }
 
-.review-loss-label {
-  font-size: 9px; line-height: 1; font-weight: bold; color: #777;
-  white-space: nowrap; max-width: 52px; overflow: hidden; text-overflow: ellipsis;
+/* 牌ラッパー（損失ラベル上, タイル下） */
+.rv-tile-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  position: relative;
 }
-.review-tile-wrap.loss-optimal .review-loss-label { color: #44dd44; }
-.review-tile-wrap.loss-minor   .review-loss-label { color: #aaa; }
-.review-tile-wrap.loss-medium  .review-loss-label { color: #ffcc00; }
-.review-tile-wrap.loss-bad     .review-loss-label { color: #ff5500; font-weight: bold; }
+.rv-loss-lbl {
+  font-size: 10px;
+  font-weight: bold;
+  line-height: 1;
+  text-align: center;
+  min-width: 22px;
+}
+.rv-loss-best   { color: #44ee44; }
+.rv-loss-min    { color: #aaaaaa; }
+.rv-loss-med    { color: #ffcc00; }
+.rv-loss-bad    { color: #ff4400; }
 
-.review-legend { font-size: 10px; color: #777; margin-top: 6px; display: flex; gap: 10px; flex-wrap: wrap; }
-.review-legend .leg-optimal { color: #44dd44; }
-.review-legend .leg-minor   { color: #aaa; }
-.review-legend .leg-medium  { color: #ffcc00; }
-.review-legend .leg-bad     { color: #ff5500; }
+/* 牌への直接クラス */
+.rv-actual {  /* 実際に切った牌: 赤枠 */
+  box-shadow:
+    inset 0 1px 2px rgba(255,255,255,0.85),
+    0 0 0 2.5px #ff3300,
+    0 3px 0 #9a7850,
+    0 4px 6px rgba(0,0,0,0.4) !important;
+}
+.rv-best { /* 最善牌: 緑枠 */
+  box-shadow:
+    inset 0 1px 2px rgba(255,255,255,0.85),
+    0 0 0 2.5px #44ee44,
+    0 3px 0 #9a7850,
+    0 4px 6px rgba(0,0,0,0.4) !important;
+}
+.rv-wrap-best  .rv-loss-lbl { color: #44ee44; }
+.rv-wrap-med   .rv-loss-lbl { color: #ffcc00; }
+.rv-wrap-bad   .rv-loss-lbl { color: #ff4400; }
+
+/* ── 捨て牌タイムライン ── */
+#rv-discard {
+  padding: 10px 20px;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+.rv-section-lbl {
+  font-size: 11px;
+  color: #7a8870;
+  margin-bottom: 6px;
+}
+.rv-disc-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  align-items: flex-start;
+}
+.rv-disc-wrap {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+  border-radius: 4px;
+  padding: 2px;
+}
+.rv-disc-cur {
+  background: rgba(200,160,80,0.2);
+  outline: 1px solid #c8a050;
+  border-radius: 4px;
+}
+.rv-small-tile {
+  width: 22px !important;
+  height: 30px !important;
+}
+.rv-small-tile .tile-face { font-size: 12px !important; }
+.rv-small-tile .tile-sub  { font-size: 5px !important; }
+.rv-disc-num {
+  font-size: 8px;
+  color: #556655;
+  text-align: center;
+}
+
+/* 捨て牌タイムラインの損失色 */
+.rv-disc-wrap.loss-optimal .rv-small-tile {
+  box-shadow: inset 0 1px 1px rgba(255,255,255,0.7), 0 0 0 1.5px #44dd44,
+    0 1px 0 #9a7850;
+}
+.rv-disc-wrap.loss-medium .rv-small-tile {
+  box-shadow: inset 0 1px 1px rgba(255,255,255,0.7), 0 0 0 1.5px #ffcc00,
+    0 1px 0 #9a7850;
+}
+.rv-disc-wrap.loss-bad .rv-small-tile {
+  box-shadow: inset 0 1px 1px rgba(255,255,255,0.7), 0 0 0 1.5px #ff4400,
+    0 1px 0 #9a7850;
+}
+
+/* ── 分析テーブル ── */
+#rv-analysis {
+  padding: 10px 20px;
+}
+.rv-analysis-tbl {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+.rv-analysis-tbl th {
+  color: #c8a050;
+  font-weight: bold;
+  padding: 5px 8px;
+  border-bottom: 1px solid rgba(200,160,80,0.3);
+  text-align: center;
+}
+.rv-analysis-tbl td {
+  padding: 5px 8px;
+  text-align: center;
+  color: #bbb;
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+}
+.rv-analysis-tbl tr:last-child td { border-bottom: none; }
+.rv-row-actual {
+  background: rgba(200,160,80,0.15);
+}
+.rv-row-actual td { color: #e8c870; }
+
+/* ── 操作コントロール ── */
+.rv-ctrl {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 20px 0;
+  flex-wrap: wrap;
+}
+.rv-btn {
+  padding: 7px 16px;
+  font-size: 14px;
+  border: 1px solid rgba(200,160,80,0.4);
+  background: rgba(200,160,80,0.12);
+  color: #c8c090;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: bold;
+}
+.rv-btn:hover { background: rgba(200,160,80,0.25); }
+.rv-auto {
+  background: rgba(30,120,60,0.4);
+  border-color: #44aa66;
+  color: #88ffaa;
+}
+.rv-auto:hover { background: rgba(30,120,60,0.65); }
 
 /* ====================================================
    レスポンシブ

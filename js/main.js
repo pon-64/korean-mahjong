@@ -1,7 +1,7 @@
 // main.js - エントリーポイント
 
 import { Game, STATE } from './game.js?v=3';
-import { initUI, render, showWinDialog, hideWinDialog, showDrawDialog, hideDrawDialog, showReviewDialog, hideReviewDialog } from './ui.js?v=7';
+import { initUI, render, showWinDialog, hideWinDialog, showDrawDialog, hideDrawDialog, showReviewDialog, hideReviewDialog } from './ui.js?v=8';
 
 let game;
 
@@ -55,7 +55,8 @@ document.addEventListener('DOMContentLoaded', () => {
     showReviewDialog(game.getState().reviewData);
   });
 
-  document.getElementById('review-close-btn').addEventListener('click', () => {
-    hideReviewDialog();
+  // close ボタンは showReviewDialog で動的生成される（.rv-close クラス）
+  document.getElementById('review-overlay').addEventListener('click', e => {
+    if (e.target.classList.contains('rv-close')) hideReviewDialog();
   });
 });

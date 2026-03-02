@@ -42,7 +42,8 @@ export class Game {
     this.log           = [];
     this.winResult     = null;
     this.reviewData    = null;
-    this.discardHistory = [[], [], [], []]; // 各プレイヤーの打牌履歴
+    this.discardHistory    = [[], [], [], []]; // 各プレイヤーの打牌履歴
+    this.riichiDiscardIdx  = [-1, -1, -1, -1]; // リーチ宣言打牌のインデックス
 
     const dealt = this.wall.deal(PLAYERS);
     for (let i = 0; i < PLAYERS; i++) this.hands[i] = sortTiles(dealt[i]);
@@ -197,6 +198,7 @@ export class Game {
       this._meldTilesFlat(playerIdx),
       doras, meldCnt
     );
+    this.riichiDiscardIdx[playerIdx] = this.discards[playerIdx].length;
     this.riichi[playerIdx] = true;
     this.addLog(`${SEATS[playerIdx]} リーチ！`);
     this._discard(playerIdx, discard);
@@ -394,8 +396,9 @@ export class Game {
   playerDiscard(tile) {
     if (this.currentPlayer !== 0) return;
     if (this.state !== STATE.PLAYER_ACTION && this.state !== STATE.WAIT_DISCARD) return;
-    // リーチ中はツモ切りのみ
-    if (this.riichi[0] && this.drawnTile && tile.id !== this.drawnTile.id) return;
+    // リーチ後（ツモ番）はツモ切りのみ。宣言直後（WAIT_DISCARD）はテンパイ維持牌ならOK
+    if (this.riichi[0] && this.state === STATE.PLAYER_ACTION &&
+        this.drawnTile && tile.id !== this.drawnTile.id) return;
     this._discard(0, tile);
   }
 
@@ -411,6 +414,7 @@ export class Game {
     if (this.riichi[0] || this.melds[0].length > 0) return;
     const closed = this._closedTiles(0);
     if (calcShanten(closed, 0) !== 0) return;
+    this.riichiDiscardIdx[0] = this.discards[0].length;
     this.riichi[0] = true;
     this.addLog('あなた リーチ！');
     this.state = STATE.WAIT_DISCARD;
@@ -488,6 +492,8 @@ export class Game {
       score: scoreResult, payments, winnerGain,
       hand, doras,
       uraDoras: isRiichi ? uraDoras : [],
+      doraIndicators:    [...this.wall.doraIndicators],
+      uraDoraIndicators: isRiichi ? [...this.wall.uraDoraIndicators] : [],
       winTypeName: getWinType(hand, meldCnt),
     };
 
@@ -515,10 +521,11 @@ export class Game {
 
     return {
       hands,
-      melds:           this.melds.map(ms => ms.map(m => ({ ...m, tiles: [...m.tiles] }))),
-      discards:        this.discards.map(d => [...d]),
-      riichi:          [...this.riichi],
-      discardHistory:  this.discardHistory.map(ph => ph.map(e => ({ ...e }))),
+      melds:             this.melds.map(ms => ms.map(m => ({ ...m, tiles: [...m.tiles] }))),
+      discards:          this.discards.map(d => [...d]),
+      riichi:            [...this.riichi],
+      riichiDiscardIdx:  [...this.riichiDiscardIdx],
+      discardHistory:    this.discardHistory.map(ph => ph.map(e => ({ ...e }))),
       discardAnalysis,
     };
   }
@@ -556,6 +563,7 @@ export class Game {
       lastDiscard: this.lastDiscard, lastDiscardFrom: this.lastDiscardFrom,
       pendingClaims: this.pendingClaims,
       reviewData: this.reviewData,
+      riichiDiscardIdx: this.riichiDiscardIdx,
     };
   }
 }
