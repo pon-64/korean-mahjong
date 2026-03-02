@@ -459,7 +459,6 @@ function _renderRvFrame() {
   const pi       = _rv.player;
   const history  = rd.discardHistory?.[pi]  || [];
   const analysis = rd.discardAnalysis?.[pi] || [];
-  const discards = rd.discards?.[pi]        || [];
   const total    = history.length;
 
   const turnIdx = Math.min(_rv.turn, Math.max(0, total - 1));
@@ -533,10 +532,10 @@ function _renderRvFrame() {
     handArea.appendChild(handRow);
   }
 
-  // ── 捨て牌タイムライン ──
+  // ── 捨て牌タイムライン（discardHistory を使うことで鳴かれた牌とのずれを防ぐ）──
   const discardArea = document.getElementById('rv-discard');
   discardArea.innerHTML = '';
-  if (discards.length > 0) {
+  if (history.length > 0) {
     const dlbl = document.createElement('div');
     dlbl.className = 'rv-section-lbl';
     dlbl.textContent = '捨て牌（クリックでジャンプ）';
@@ -545,11 +544,13 @@ function _renderRvFrame() {
     const drow = document.createElement('div');
     drow.className = 'rv-disc-row';
 
-    discards.forEach((tile, idx) => {
-      const h  = history[idx];
-      const an = analysis[idx];
-      const did = h?.discardedId;
-      const act = an?.find(a => a.tile.id === did);
+    history.forEach((entry, idx) => {
+      // 切った牌は handBefore から ID で引く（discards から引くと鳴かれた牌が欠落する）
+      const tile = entry.handBefore.find(t => t.id === entry.discardedId);
+      if (!tile) return;
+
+      const an  = analysis[idx];
+      const act = an?.find(a => a.tile.id === entry.discardedId);
       const loss = act?.loss ?? 0;
 
       const wrap = document.createElement('div');
