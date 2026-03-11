@@ -647,17 +647,22 @@ body {
   position: fixed; inset: 0;
   background: rgba(0,0,0,0.90);
   z-index: 200;
-  overflow-y: auto;
-  padding: 16px 12px 24px;
+  overflow: hidden;
+  padding: 16px 12px;
 }
 #review-inner {
   max-width: 900px;
+  width: 100%;
   margin: 0 auto;
   background: #0b2010;
   border: 2px solid #c8a050;
   border-radius: 14px;
   padding: 0 0 20px;
-  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: auto;                    /* inner をスクロールコンテナに */
+  -webkit-overflow-scrolling: touch;   /* iOS Safari スムーズスクロール */
+  max-height: calc(100vh - 32px);
+  max-height: calc(100svh - 32px);
 }
 
 /* ── ヘッダー ── */
@@ -912,4 +917,121 @@ body {
   .tile { width: 30px; height: 42px; }
   .tile-face { font-size: 17px !important; }
   #game-log { display: none; }
+}
+
+/* ======================================================
+   スマホ横回転（landscape）対応
+   ====================================================== */
+@media (max-height: 500px) and (orientation: landscape) {
+
+  body { padding: 0; justify-content: flex-start; }
+
+  #board {
+    width: 100vw;
+    border-radius: 0;
+    border-left: none;
+    border-right: none;
+    max-height: 100vh;
+    max-height: 100svh;
+    overflow: hidden;
+  }
+
+  #table-surface {
+    min-height: 0;
+    flex: 1;
+    padding: 3px;
+    gap: 3px;
+  }
+
+  /* ── 北エリア ── */
+  #area-north { padding: 2px 4px; gap: 2px; }
+  .north-hand-row { gap: 2px; }
+  .cpu-hand-row { gap: 0; }
+  .cpu-hand-row .tile { width: 20px !important; height: 28px !important; }
+
+  /* ── 東西エリア ── */
+  #area-east, #area-west { width: 48px; padding: 3px 2px; gap: 2px; }
+  .nameplate-side { min-width: 16px; font-size: 9px; padding: 3px 2px; }
+  .cpu-hand-vert .tile {
+    width: 22px !important;
+    height: 30px !important;
+    margin-top: -4px;
+    margin-bottom: -4px;
+  }
+  .side-hand-col { max-height: 200px; overflow: hidden; }
+  .meld-vert { gap: 1px; }
+  .meld-vert .meld .tile { width: 20px !important; height: 28px !important; }
+
+  /* ── 中央テーブル ── */
+  #table-center { padding: 3px; gap: 3px; }
+  #center-deco { width: 80px; padding: 3px; gap: 2px; }
+  #dora-indicators .tile { width: 20px !important; height: 28px !important; }
+  #remaining { font-size: 10px; }
+  .label-text { font-size: 9px; }
+
+  /* 南/北捨て牌（横方向） */
+  .discard-south, .discard-north {
+    width: 130px;
+    height: 36px;
+    padding: 2px;
+    gap: 2px;
+    overflow: hidden;
+  }
+  /* 東/西捨て牌（縦方向） */
+  .discard-east, .discard-west {
+    height: 200px;
+    min-width: auto;
+    width: 62px;
+    padding: 2px;
+    gap: 1px 2px;
+  }
+  /* 全捨て牌タイル */
+  .discard-tile { width: 20px !important; height: 28px !important; }
+  .discard-east .discard-tile,
+  .discard-west .discard-tile { width: 20px !important; height: 28px !important; }
+
+  /* ── 南エリア ── */
+  #area-south { padding: 2px 4px; gap: 2px; }
+  .south-hand-row { gap: 4px; }
+  #player-hand { padding: 2px 0 8px; min-height: 0; gap: 2px; }
+  #player-hand .tile  { width: 24px !important; height: 34px !important; }
+  .meld-row .meld .tile { width: 20px !important; height: 28px !important; }
+  .tile.drawn           { transform: translateY(-6px); }
+  .tile.clickable:hover { transform: translateY(-6px); }
+
+  /* ── ネームプレート全般 ── */
+  .nameplate        { padding: 2px 5px; gap: 4px; }
+  .seat-name        { font-size: 10px; }
+  .score-label      { font-size: 10px; }
+
+  /* ── リーチ宣言牌ラッパー（南） ── */
+  .riichi-discard-wrap { width: 28px; height: 20px; }
+
+  /* ── コントロール ── */
+  #controls  { padding: 4px 6px; gap: 6px; }
+  .action-btn {
+    padding: 5px 10px;
+    font-size: 12px;
+    min-width: 52px;
+    border-radius: 4px;
+  }
+
+  #game-log { display: none; }
+}
+
+/* iPhone SE 等: 高さ 380px 以下の追加縮小 */
+@media (max-height: 380px) and (orientation: landscape) {
+  .cpu-hand-row .tile  { width: 16px !important; height: 22px !important; }
+  .cpu-hand-vert .tile {
+    width: 18px !important;
+    height: 25px !important;
+    margin-top: -4px;
+    margin-bottom: -4px;
+  }
+  #player-hand .tile   { width: 20px !important; height: 28px !important; }
+  .discard-tile        { width: 16px !important; height: 22px !important; }
+  #area-east, #area-west { width: 40px; }
+  #center-deco         { width: 70px; }
+  #controls            { padding: 3px 4px; }
+  .action-btn          { padding: 4px 8px; font-size: 11px; min-width: 44px; }
 }

@@ -328,7 +328,11 @@ export class Game {
 
   _doPon(playerIdx, fromIdx, tile, type) {
     // 鳴いた牌を捨て牌エリアから削除
-    const discIdx = this.discards[fromIdx].findLastIndex(t => t.id === tile.id);
+    const _discards = this.discards[fromIdx];
+    let discIdx = -1;
+    for (let _i = _discards.length - 1; _i >= 0; _i--) {
+      if (_discards[_i].id === tile.id) { discIdx = _i; break; }
+    }
     if (discIdx !== -1) this.discards[fromIdx].splice(discIdx, 1);
 
     const needed = type === 'minkan' ? 3 : 2;

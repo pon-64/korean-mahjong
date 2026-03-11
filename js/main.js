@@ -1,6 +1,6 @@
 // main.js - エントリーポイント
 
-import { Game, STATE } from './game.js?v=3';
+import { Game, STATE } from './game.js?v=4';
 import { initUI, render, showWinDialog, hideWinDialog, showDrawDialog, hideDrawDialog, showReviewDialog, hideReviewDialog } from './ui.js?v=9';
 
 let game;
