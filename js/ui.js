@@ -2,7 +2,7 @@
 
 import { sortTiles } from './tiles.js?v=2';
 import { calcShanten, getTenpaiWaits, isWinningHand } from './hand.js?v=2';
-import { STATE, SEATS } from './game.js?v=3';
+import { STATE, SEATS } from './game.js?v=5';
 import { applyTileBackground } from './tileimage.js?v=5';
 
 let game = null;
@@ -333,7 +333,10 @@ function calcReviewSummary(reviewData) {
     const totalTurns = analysis.length;
     let optimalCount = 0, totalLoss = 0, maxLoss = 0;
     for (let t = 0; t < totalTurns; t++) {
-      const actual = analysis[t]?.find(a => a.tile.id === history[t]?.discardedId);
+      const did    = history[t]?.discardedId;
+      const actual = analysis[t]?.find(a =>
+        a.tileIds ? a.tileIds.includes(did) : a.tile.id === did
+      );
       const loss = actual?.loss ?? 0;
       if (loss === 0) optimalCount++;
       totalLoss += loss;
@@ -414,9 +417,11 @@ export function showReviewDialog(reviewData) {
   // ── 動的エリア ──
   const handArea     = document.createElement('div'); handArea.id = 'rv-hand';
   const discardArea  = document.createElement('div'); discardArea.id = 'rv-discard';
+  const oppArea      = document.createElement('div'); oppArea.id = 'rv-opp';
   const analysisArea = document.createElement('div'); analysisArea.id = 'rv-analysis';
   inner.appendChild(handArea);
   inner.appendChild(discardArea);
+  inner.appendChild(oppArea);
   inner.appendChild(analysisArea);
 
   // ── 操作コントロール ──
@@ -464,9 +469,9 @@ function _renderRvFrame() {
   const turnIdx = Math.min(_rv.turn, Math.max(0, total - 1));
   _rv.turn = turnIdx;
 
-  const entry   = history[turnIdx]  || null;
-  const turns   = analysis[turnIdx] || [];
-  const discId  = entry?.discardedId;
+  const entry  = history[turnIdx] || null;
+  const turns  = analysis[turnIdx] || [];
+  const discId = entry?.discardedId;
 
   // ── 手牌エリア ──
   const handArea = document.getElementById('rv-hand');
@@ -480,13 +485,29 @@ function _renderRvFrame() {
     : `${REVIEW_SEAT_NAMES[pi]} — 打牌なし`;
   handArea.appendChild(turnLbl);
 
+  // ドラ表示牌
+  if (entry?.doraIndicators?.length > 0) {
+    const doraRow = document.createElement('div');
+    doraRow.className = 'rv-dora-row';
+    const doraLbl = document.createElement('span');
+    doraLbl.className = 'rv-dora-lbl';
+    doraLbl.textContent = 'ドラ表示牌:';
+    doraRow.appendChild(doraLbl);
+    for (const d of entry.doraIndicators) {
+      const te = createTileEl(d);
+      te.classList.add('rv-small-tile');
+      doraRow.appendChild(te);
+    }
+    handArea.appendChild(doraRow);
+  }
+
   if (entry) {
     const handRow = document.createElement('div');
     handRow.className = 'rv-hand-row';
 
-    // 分析マップ（tile.id → entry）
+    // 分析マップ（suit+num → entry）— 同種牌は代表エントリを共有
     const aMap = new Map();
-    for (const a of turns) aMap.set(a.tile.id, a);
+    for (const a of turns) aMap.set(a.tile.suit + a.tile.num, a);
 
     // handBefore をソートして表示
     const sorted = [...entry.handBefore].sort((a, b) => {
@@ -499,11 +520,11 @@ function _renderRvFrame() {
       const wrap = document.createElement('div');
       wrap.className = 'rv-tile-wrap';
 
-      const tileEl = createTileEl(t, { tileW: 32, tileH: 44 });
+      const tileEl = createTileEl(t);
       // 実際に切った牌: 赤枠
       if (t.id === discId) tileEl.classList.add('rv-actual');
 
-      const a = aMap.get(t.id);
+      const a = aMap.get(t.suit + t.num);
       if (a) {
         if (a.isOptimal) {
           tileEl.classList.add('rv-best');
@@ -532,7 +553,7 @@ function _renderRvFrame() {
     handArea.appendChild(handRow);
   }
 
-  // ── 捨て牌タイムライン（discardHistory を使うことで鳴かれた牌とのずれを防ぐ）──
+  // ── 捨て牌タイムライン ──
   const discardArea = document.getElementById('rv-discard');
   discardArea.innerHTML = '';
   if (history.length > 0) {
@@ -544,13 +565,12 @@ function _renderRvFrame() {
     const drow = document.createElement('div');
     drow.className = 'rv-disc-row';
 
-    history.forEach((entry, idx) => {
-      // 切った牌は handBefore から ID で引く（discards から引くと鳴かれた牌が欠落する）
-      const tile = entry.handBefore.find(t => t.id === entry.discardedId);
+    history.forEach((e, idx) => {
+      const tile = e.handBefore.find(t => t.id === e.discardedId);
       if (!tile) return;
 
-      const an  = analysis[idx];
-      const act = an?.find(a => a.tile.id === entry.discardedId);
+      const an   = analysis[idx];
+      const act  = an?.find(a => a.tileIds ? a.tileIds.includes(e.discardedId) : a.tile.id === e.discardedId);
       const loss = act?.loss ?? 0;
 
       const wrap = document.createElement('div');
@@ -560,7 +580,7 @@ function _renderRvFrame() {
       else if (loss < 100)  wrap.classList.add('loss-medium');
       else                  wrap.classList.add('loss-bad');
 
-      const te = createTileEl(tile, { tileW: 22, tileH: 30 });
+      const te = createTileEl(tile);
       te.classList.add('rv-small-tile');
       wrap.appendChild(te);
 
@@ -574,6 +594,51 @@ function _renderRvFrame() {
       drow.appendChild(wrap);
     });
     discardArea.appendChild(drow);
+  }
+
+  // ── 相手捨て牌 ──
+  const oppArea = document.getElementById('rv-opp');
+  if (oppArea) {
+    oppArea.innerHTML = '';
+    if (entry?.opponentDiscards) {
+      const olbl = document.createElement('div');
+      olbl.className = 'rv-section-lbl';
+      olbl.textContent = '各プレイヤー捨て牌（このターン時点）';
+      oppArea.appendChild(olbl);
+
+      const oppRow = document.createElement('div');
+      oppRow.className = 'rv-opp-row';
+
+      for (let opp = 0; opp < 4; opp++) {
+        if (opp === pi) continue;
+        const discards = entry.opponentDiscards[opp] || [];
+        const col = document.createElement('div');
+        col.className = 'rv-opp-col';
+
+        const name = document.createElement('div');
+        name.className = 'rv-opp-name';
+        name.textContent = REVIEW_SEAT_NAMES[opp];
+        col.appendChild(name);
+
+        const tilesDiv = document.createElement('div');
+        tilesDiv.className = 'rv-opp-tiles';
+        if (discards.length === 0) {
+          const empty = document.createElement('span');
+          empty.className = 'rv-opp-empty';
+          empty.textContent = 'なし';
+          tilesDiv.appendChild(empty);
+        } else {
+          for (const t of discards) {
+            const te = createTileEl(t);
+            te.classList.add('rv-small-tile');
+            tilesDiv.appendChild(te);
+          }
+        }
+        col.appendChild(tilesDiv);
+        oppRow.appendChild(col);
+      }
+      oppArea.appendChild(oppRow);
+    }
   }
 
   // ── 分析テーブル ──
@@ -593,10 +658,11 @@ function _renderRvFrame() {
       '</tr></thead>';
 
     const tbody = document.createElement('tbody');
-    const sorted2 = [...turns].sort((a, b) => b.score - a.score);
+    const sorted2 = [...turns].sort((a, b) => b.score - a.score || b.iso - a.iso);
     for (const a of sorted2) {
+      const isActual = a.tileIds ? a.tileIds.includes(discId) : a.tile.id === discId;
       const tr = document.createElement('tr');
-      if (a.tile.id === discId) tr.classList.add('rv-row-actual');
+      if (isActual) tr.classList.add('rv-row-actual');
       const tname = NUM_CHARS[a.tile.suit][a.tile.num] +
                     (a.tile.suit !== 'z' ? SUB_CHARS[a.tile.suit] : '');
       tr.innerHTML =

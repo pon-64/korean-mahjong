@@ -852,6 +852,52 @@ body {
     0 1px 0 #9a7850;
 }
 
+/* ── ドラ表示牌 ── */
+.rv-dora-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 0 8px;
+  flex-wrap: wrap;
+}
+.rv-dora-lbl {
+  font-size: 11px;
+  color: #c8a050;
+  flex-shrink: 0;
+}
+
+/* ── 相手捨て牌 ── */
+#rv-opp {
+  padding: 10px 20px;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+.rv-opp-row {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.rv-opp-col {
+  flex: 1;
+  min-width: 140px;
+}
+.rv-opp-name {
+  font-size: 11px;
+  color: #c8a050;
+  margin-bottom: 4px;
+  font-weight: bold;
+}
+.rv-opp-tiles {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px;
+  min-height: 32px;
+}
+.rv-opp-empty {
+  font-size: 10px;
+  color: #556655;
+  line-height: 30px;
+}
+
 /* ── 分析テーブル ── */
 #rv-analysis {
   padding: 10px 20px;

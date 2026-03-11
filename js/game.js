@@ -236,11 +236,15 @@ export class Game {
 
     // 打牌前の手牌状態を履歴に記録（振り返り用）
     this.discardHistory[playerIdx].push({
-      handBefore: [...this.hands[playerIdx]],
-      meldTiles:  [...this._meldTilesFlat(playerIdx)],
-      meldCount:  this.melds[playerIdx].length,
-      doras:      [...this.wall.getDoras()],
-      discardedId: tile.id,
+      handBefore:      [...this.hands[playerIdx]],
+      meldTiles:       [...this._meldTilesFlat(playerIdx)],
+      meldCount:       this.melds[playerIdx].length,
+      doras:           [...this.wall.getDoras()],
+      doraIndicators:  [...this.wall.doraIndicators],
+      discardedId:     tile.id,
+      opponentDiscards: this.discards.map((d, i) =>
+        i === playerIdx ? [] : [...d]
+      ),
     });
 
     this.hands[playerIdx].splice(idx, 1);

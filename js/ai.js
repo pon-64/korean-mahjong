@@ -143,12 +143,29 @@ export function shouldKan(closedTiles, kanTile, meldCount = 0) {
 }
 
 /**
+ * 牌の孤立度スコア（高いほど孤立 = 捨てやすい）
+ * 字牌 > 端牌孤立 > 中張孤立 > 連結牌
+ */
+function isolationScore(tile, hand) {
+  if (tile.suit === 'z') return 10;
+  let score = 0;
+  if (tile.num === 1 || tile.num === 9) score += 3;
+  const hasNeighbor = hand.some(
+    t => t.id !== tile.id && t.suit === tile.suit && Math.abs(t.num - tile.num) <= 2
+  );
+  if (!hasNeighbor) score += 5;
+  return score;
+}
+
+/**
  * 振り返り用：打牌前の手牌から各打牌候補の評価と損失を計算
+ * 同種牌（suit+num が同じ）は代表1エントリに集約して返す。
  * @param {Array}  handBefore  - 打牌前の手牌（14枚、副露牌含む）
  * @param {Array}  meldTiles   - 副露牌
  * @param {number} meldCount   - 副露数
  * @param {Array}  doras       - ドラ牌リスト
- * @returns {Array} [{tile, shanten, effective, score, loss, isOptimal}]
+ * @returns {Array} [{tile, tileIds, shanten, effective, score, loss, isOptimal}]
+ *   tileIds: この種牌の全tile.idリスト（summary検索用）
  */
 export function calcDiscardAnalysis(handBefore, meldTiles, meldCount, doras = []) {
   const meldIds = new Set(meldTiles.map(t => t.id));
@@ -156,14 +173,34 @@ export function calcDiscardAnalysis(handBefore, meldTiles, meldCount, doras = []
 
   if (closed.length === 0) return [];
 
+  // ── 1. 同種牌を代表1枚に集約（最初の出現を採用）──
+  const seen    = new Map(); // 'suit+num' → index in deduped
+  const deduped = [];        // [{tile, tileIds}]
+  for (const t of closed) {
+    const key = t.suit + t.num;
+    if (!seen.has(key)) {
+      seen.set(key, deduped.length);
+      deduped.push({ tile: t, tileIds: [t.id] });
+    } else {
+      deduped[seen.get(key)].tileIds.push(t.id);
+    }
+  }
+
+  // ── 2. 各代表牌の評価 ──
   const results = [];
   let bestScore = -Infinity;
 
-  for (let i = 0; i < closed.length; i++) {
-    const tile = closed[i];
-    const rest = closed.filter((_, j) => j !== i);
-    const sh   = calcShanten(rest, meldCount);
-    const eff  = countEffectiveTiles(rest, meldCount);
+  for (const { tile, tileIds } of deduped) {
+    // 代表牌1枚を除いた残り手牌でシャンテン計算
+    // 同種牌が複数あっても1枚除くのが正しい
+    let removed = false;
+    const rest = closed.filter(t => {
+      if (!removed && t.id === tile.id) { removed = true; return false; }
+      return true;
+    });
+
+    const sh  = calcShanten(rest, meldCount);
+    const eff = countEffectiveTiles(rest, meldCount);
 
     const base = (sh < 0) ? 500 : (sh === 0) ? 200 + eff : -(sh * 100) + eff;
 
@@ -173,13 +210,20 @@ export function calcDiscardAnalysis(handBefore, meldTiles, meldCount, doras = []
     else if (doras.some(d => d.suit === tile.suit && d.num === tile.num)) penalty = 10;
 
     const score = base - penalty;
-    results.push({ tile, shanten: sh, effective: eff, score });
+    const iso   = isolationScore(tile, closed);
+
+    results.push({ tile, tileIds, shanten: sh, effective: eff, score, iso });
     if (score > bestScore) bestScore = score;
   }
 
+  // ── 3. 同スコア内で孤立度が最高のものを◎最善とする ──
+  const topIso = results
+    .filter(r => r.score === bestScore)
+    .reduce((mx, r) => Math.max(mx, r.iso), -Infinity);
+
   for (const r of results) {
-    r.loss = bestScore - r.score;
-    r.isOptimal = r.loss === 0;
+    r.loss      = bestScore - r.score;
+    r.isOptimal = r.score === bestScore && r.iso === topIso;
   }
   return results;
 }
