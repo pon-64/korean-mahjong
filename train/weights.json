@@ -1,0 +1,16 @@
+{
+  "timestamp": "2026-03-11T15:08:57.161Z",
+  "iterations": 20,
+  "gamesPerEval": 30,
+  "improvements": 1,
+  "baselineAvgScore": -1.5666666666666667,
+  "bestAvgScore": 2.1,
+  "weights": {
+    "shantenPenalty": 100,
+    "tenpaiBonus": 200,
+    "effectiveBonus": 1.3,
+    "redDoraPenalty": 15,
+    "doraPenalty": 10,
+    "safeBonus": 25
+  }
+}
