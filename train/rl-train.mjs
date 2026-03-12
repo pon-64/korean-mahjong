@@ -25,8 +25,8 @@ const SAVE_PATH = join(__dir, 'weights-rl.json');
 // ============================================================
 // HYPERPARAMETERS
 // ============================================================
-const ALPHA_DISCARD = 0.002;   // learning rate for discard
-const ALPHA_PON     = 0.005;   // learning rate for pon (fewer samples)
+const ALPHA_DISCARD = 0.0005;  // learning rate for discard (reduced to prevent divergence)
+const ALPHA_PON     = 0.001;   // learning rate for pon
 const EPSILON_START = 0.25;    // exploration rate (start)
 const EPSILON_END   = 0.02;    // exploration rate (end)
 const EPSILON_HALF  = 200_000; // games to halve epsilon (slower decay)
@@ -126,8 +126,11 @@ while (true) {
   scoreSum2 += score * score;
   scoreSamples++;
 
-  // Update running mean (exponential moving average)
+  // Update running mean and variance (exponential moving average)
+  const prevMean = runningMean;
   runningMean = runningMean * BASELINE_DECAY + score * (1 - BASELINE_DECAY);
+  const delta = score - prevMean;
+  runningVar  = runningVar  * BASELINE_DECAY + delta * delta * (1 - BASELINE_DECAY);
 
   recentScores.push(score);
   if (recentScores.length > 500) recentScores.shift();
@@ -135,8 +138,9 @@ while (true) {
   totalGames++;
   iteration++;
 
-  // REINFORCE update
-  updateWeights(weights, trace, score, runningMean, ALPHA_DISCARD);
+  // REINFORCE update (with std normalization)
+  const runningStd = Math.sqrt(Math.max(runningVar, 0.01));
+  updateWeights(weights, trace, score, runningMean, runningStd, ALPHA_DISCARD);
 
   // ============================================================
   // LOGGING

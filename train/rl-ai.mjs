@@ -210,25 +210,46 @@ export function makeBaselinePlayer() {
 }
 
 // ============================================================
-// WEIGHT UPDATE (REINFORCE with baseline)
+// WEIGHT UPDATE (REINFORCE with baseline + fixes)
 // ============================================================
-export function updateWeights(weights, trace, score, baseline, alpha) {
-  const advantage = score - baseline;
-  if (Math.abs(advantage) < 1e-8) return; // no signal
+const MAX_WEIGHT   = 50;   // weight clamp (prevent divergence)
+const MAX_GRAD_NORM = 2.0; // max per-game gradient L2 norm
+
+export function updateWeights(weights, trace, score, baseline, std, alpha) {
+  const rawAdv  = score - baseline;
+  const advantage = rawAdv / Math.max(std, 0.5); // normalize by std
+  if (Math.abs(advantage) < 1e-6) return;
+
+  // Accumulate gradient over the whole game first
+  const discGrad = new Float64Array(weights.discard.length);
+  const ponGrad  = new Float64Array(weights.pon.length);
 
   for (const entry of trace) {
     if (entry.type === 'discard') {
       const f = entry.features;
-      for (let i = 0; i < weights.discard.length; i++) {
-        weights.discard[i] += alpha * advantage * f[i];
-      }
+      for (let i = 0; i < discGrad.length; i++) discGrad[i] += advantage * f[i];
     } else if (entry.type === 'pon') {
       const f = entry.features;
       const dir = entry.decision ? 1 : -1;
-      for (let i = 0; i < weights.pon.length; i++) {
-        weights.pon[i] += alpha * advantage * dir * f[i];
-      }
+      for (let i = 0; i < ponGrad.length; i++) ponGrad[i] += advantage * dir * f[i];
     }
+  }
+
+  // Gradient clipping by L2 norm
+  let norm = 0;
+  for (const g of discGrad) norm += g * g;
+  for (const g of ponGrad)  norm += g * g;
+  norm = Math.sqrt(norm);
+  const scale = norm > MAX_GRAD_NORM ? MAX_GRAD_NORM / norm : 1;
+
+  // Apply update with weight clamping
+  for (let i = 0; i < weights.discard.length; i++) {
+    weights.discard[i] += alpha * discGrad[i] * scale;
+    weights.discard[i] = Math.max(-MAX_WEIGHT, Math.min(MAX_WEIGHT, weights.discard[i]));
+  }
+  for (let i = 0; i < weights.pon.length; i++) {
+    weights.pon[i] += alpha * ponGrad[i] * scale;
+    weights.pon[i] = Math.max(-MAX_WEIGHT, Math.min(MAX_WEIGHT, weights.pon[i]));
   }
 }
 
