@@ -640,29 +640,29 @@ body {
 }
 
 /* ====================================================
-   配譜検討（全面リニューアル）
+   配譜検討（ボードスタイル）
    ==================================================== */
 #review-overlay {
   display: none;
   position: fixed; inset: 0;
-  background: rgba(0,0,0,0.90);
+  background: rgba(0,0,0,0.92);
   z-index: 200;
   overflow: hidden;
-  padding: 16px 12px;
+  align-items: center;
+  justify-content: center;
 }
 #review-inner {
-  max-width: 900px;
-  width: 100%;
-  margin: 0 auto;
-  background: #0b2010;
-  border: 2px solid #c8a050;
-  border-radius: 14px;
-  padding: 0 0 20px;
-  overflow-x: hidden;
-  overflow-y: auto;                    /* inner をスクロールコンテナに */
-  -webkit-overflow-scrolling: touch;   /* iOS Safari スムーズスクロール */
-  max-height: calc(100vh - 32px);
-  max-height: calc(100svh - 32px);
+  width: min(98vw, 1200px);
+  margin: auto;
+  background: #0e200e;
+  border: 6px solid #5a3010;
+  border-radius: 12px;
+  box-shadow: inset 0 0 0 2px #7a4a20, 0 8px 32px rgba(0,0,0,0.7);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  max-height: 100vh;
+  max-height: 100svh;
 }
 
 /* ── ヘッダー ── */
@@ -670,13 +670,14 @@ body {
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 12px 20px;
+  padding: 8px 16px;
   background: rgba(0,0,0,0.45);
   border-bottom: 1px solid rgba(200,160,80,0.25);
   flex-wrap: wrap;
+  flex-shrink: 0;
 }
 .rv-title {
-  font-size: 16px;
+  font-size: 15px;
   font-weight: bold;
   color: #c8a050;
   flex-shrink: 0;
@@ -714,48 +715,126 @@ body {
 }
 .rv-close:hover { background: rgba(200,50,50,0.9); }
 
-/* ── サマリー ── */
-.rv-summary {
-  padding: 12px 20px 6px;
-  border-bottom: 1px solid rgba(255,255,255,0.06);
-}
-.rv-summary table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 12px;
-}
-.rv-summary th {
-  color: #c8a050;
-  padding: 4px 8px;
-  border-bottom: 1px solid rgba(200,160,80,0.25);
-  text-align: center;
-  font-weight: bold;
-}
-.rv-summary td {
-  padding: 4px 8px;
-  text-align: center;
-  color: #bbb;
-  border-bottom: 1px solid rgba(255,255,255,0.04);
-}
-.rv-summary tr:last-child td { border-bottom: none; }
-
-/* ── 現在ターン手牌 ── */
-#rv-hand {
-  padding: 14px 20px 8px;
-  border-bottom: 1px solid rgba(255,255,255,0.06);
-  min-height: 110px;
-}
-.rv-turn-lbl {
-  font-size: 12px;
-  color: #c8a050;
-  margin-bottom: 10px;
-  font-weight: bold;
-}
-.rv-hand-row {
+/* ── ボードサーフェス ── */
+.rv-board-surface {
+  flex: 1;
   display: flex;
-  flex-wrap: wrap;
+  flex-direction: column;
+  background: #1a4a24;
+  padding: 6px;
+  gap: 4px;
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* ── 各エリア（ゲームボードと同じ構造） ── */
+#rv-area-north {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  padding: 4px 6px;
+  background: rgba(0,0,0,0.20);
+  border-radius: 6px;
+}
+#rv-middle-row {
+  display: flex;
+  flex-direction: row;
+  gap: 4px;
+  flex: 1;
+  min-height: 0;
+}
+#rv-area-east {
+  width: 115px;
+  flex-shrink: 0;
+  background: rgba(0,0,0,0.20);
+  border-radius: 6px;
+  padding: 6px 4px;
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  gap: 3px;
+  overflow: visible;
+}
+#rv-table-center {
+  flex: 1;
+  background: #122a18;
+  border-radius: 8px;
+  padding: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  box-shadow: inset 0 2px 12px rgba(0,0,0,0.5);
+  min-width: 0;
+}
+#rv-center-mid-row {
+  flex: 1;
+  display: flex;
+  flex-direction: row;
+  gap: 4px;
+  min-height: 0;
+  justify-content: center;
+  align-items: center;
+}
+#rv-center-deco {
+  flex: 0 0 auto;
+  width: 130px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
   gap: 6px;
+  padding: 6px;
+  background: rgba(0,0,0,0.30);
+  border-radius: 6px;
+  border: 1px solid rgba(200,160,80,0.15);
+}
+#rv-area-west {
+  width: 115px;
+  flex-shrink: 0;
+  background: rgba(0,0,0,0.20);
+  border-radius: 6px;
+  padding: 6px 4px;
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  gap: 3px;
+  overflow: visible;
+}
+#rv-area-south {
+  background: rgba(0,0,0,0.20);
+  border-radius: 6px;
+  padding: 6px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+#rv-player-hand {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 6px;
+  padding: 4px 0 14px;
+  min-height: 68px;
+  overflow-x: auto;
   align-items: flex-end;
+}
+
+/* 牌の回転（ゲームボードと同じ） */
+#rv-area-east .tile         { transform: rotate(90deg);  }
+#rv-area-west .tile         { transform: rotate(-90deg); }
+#rv-area-north .tile.face-down { transform: rotate(180deg); }
+
+/* ターン情報 */
+.rv-turn-info {
+  font-size: 16px;
+  color: #c8a050;
+  font-weight: bold;
+}
+.rv-turn-counter {
+  font-size: 12px;
+  color: #c8a050;
+  min-width: 100px;
+  text-align: center;
 }
 
 /* 牌ラッパー（損失ラベル上, タイル下） */
@@ -797,142 +876,17 @@ body {
 .rv-wrap-med   .rv-loss-lbl { color: #ffcc00; }
 .rv-wrap-bad   .rv-loss-lbl { color: #ff4400; }
 
-/* ── 捨て牌タイムライン ── */
-#rv-discard {
-  padding: 10px 20px;
-  border-bottom: 1px solid rgba(255,255,255,0.06);
-}
-.rv-section-lbl {
-  font-size: 11px;
-  color: #7a8870;
-  margin-bottom: 6px;
-}
-.rv-disc-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px;
-  align-items: flex-start;
-}
-.rv-disc-wrap {
-  display: inline-flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 1px;
-  border-radius: 4px;
-  padding: 2px;
-}
-.rv-disc-cur {
-  background: rgba(200,160,80,0.2);
-  outline: 1px solid #c8a050;
-  border-radius: 4px;
-}
-.rv-small-tile {
-  width: 22px !important;
-  height: 30px !important;
-}
-.rv-small-tile .tile-face { font-size: 12px !important; }
-.rv-small-tile .tile-sub  { font-size: 5px !important; }
-.rv-disc-num {
-  font-size: 8px;
-  color: #556655;
-  text-align: center;
-}
-
-/* 捨て牌タイムラインの損失色 */
-.rv-disc-wrap.loss-optimal .rv-small-tile {
-  box-shadow: inset 0 1px 1px rgba(255,255,255,0.7), 0 0 0 1.5px #44dd44,
-    0 1px 0 #9a7850;
-}
-.rv-disc-wrap.loss-medium .rv-small-tile {
-  box-shadow: inset 0 1px 1px rgba(255,255,255,0.7), 0 0 0 1.5px #ffcc00,
-    0 1px 0 #9a7850;
-}
-.rv-disc-wrap.loss-bad .rv-small-tile {
-  box-shadow: inset 0 1px 1px rgba(255,255,255,0.7), 0 0 0 1.5px #ff4400,
-    0 1px 0 #9a7850;
-}
-
-/* ── ドラ表示牌 ── */
-.rv-dora-row {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 4px 0 8px;
-  flex-wrap: wrap;
-}
-.rv-dora-lbl {
-  font-size: 11px;
-  color: #c8a050;
-  flex-shrink: 0;
-}
-
-/* ── 相手捨て牌 ── */
-#rv-opp {
-  padding: 10px 20px;
-  border-bottom: 1px solid rgba(255,255,255,0.06);
-}
-.rv-opp-row {
-  display: flex;
-  gap: 12px;
-  flex-wrap: wrap;
-}
-.rv-opp-col {
-  flex: 1;
-  min-width: 140px;
-}
-.rv-opp-name {
-  font-size: 11px;
-  color: #c8a050;
-  margin-bottom: 4px;
-  font-weight: bold;
-}
-.rv-opp-tiles {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 2px;
-  min-height: 32px;
-}
-.rv-opp-empty {
-  font-size: 10px;
-  color: #556655;
-  line-height: 30px;
-}
-
-/* ── 分析テーブル ── */
-#rv-analysis {
-  padding: 10px 20px;
-}
-.rv-analysis-tbl {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 12px;
-}
-.rv-analysis-tbl th {
-  color: #c8a050;
-  font-weight: bold;
-  padding: 5px 8px;
-  border-bottom: 1px solid rgba(200,160,80,0.3);
-  text-align: center;
-}
-.rv-analysis-tbl td {
-  padding: 5px 8px;
-  text-align: center;
-  color: #bbb;
-  border-bottom: 1px solid rgba(255,255,255,0.04);
-}
-.rv-analysis-tbl tr:last-child td { border-bottom: none; }
-.rv-row-actual {
-  background: rgba(200,160,80,0.15);
-}
-.rv-row-actual td { color: #e8c870; }
-
 /* ── 操作コントロール ── */
 .rv-ctrl {
   display: flex;
   justify-content: center;
+  align-items: center;
   gap: 8px;
-  padding: 12px 20px 0;
+  padding: 8px 16px;
   flex-wrap: wrap;
+  flex-shrink: 0;
+  background: rgba(0,0,0,0.30);
+  border-top: 1px solid rgba(200,160,80,0.15);
 }
 .rv-btn {
   padding: 7px 16px;
