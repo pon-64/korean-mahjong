@@ -319,13 +319,13 @@ export function hideWinDialog()  { const d = document.getElementById('win-dialog
 export function showDrawDialog() { const d = document.getElementById('draw-dialog'); if (d) d.style.display = 'flex'; }
 export function hideDrawDialog() { const d = document.getElementById('draw-dialog'); if (d) d.style.display = 'none'; }
 
-// ====== 配譜検討（ボードスタイル） ======
+// ====== 配譜検討（実ボード使用・下部コントロールバー） ======
 
 const REVIEW_SEAT_NAMES = ['南（あなた）', '西（下家）', '北（対面）', '東（上家）'];
 
-let _rv = { data: null, player: 0, turn: 0, timer: null };
+let _rv = { data: null, player: 0, turn: 0, timer: null, sourceDialog: null };
 
-/** 配譜検討ダイアログを開く */
+/** 配譜検討を開く：ダイアログを隠してボードに重なるコントロールバーを表示 */
 export function showReviewDialog(reviewData) {
   if (!reviewData) return;
   _stopAutoPlay();
@@ -333,13 +333,25 @@ export function showReviewDialog(reviewData) {
   _rv.player = 0;
   _rv.turn   = 0;
 
+  // どのダイアログから開いたか記憶して隠す
+  const winDlg  = document.getElementById('win-dialog');
+  const drawDlg = document.getElementById('draw-dialog');
+  if (winDlg?.style.display !== 'none' && winDlg?.style.display !== '') {
+    _rv.sourceDialog = 'win'; winDlg.style.display = 'none';
+  } else {
+    _rv.sourceDialog = 'draw'; if (drawDlg) drawDlg.style.display = 'none';
+  }
+  // アクションボタンを隠す
+  const controls = document.getElementById('controls');
+  if (controls) controls.style.display = 'none';
+
   const overlay = document.getElementById('review-overlay');
   const inner   = document.getElementById('review-inner');
   if (!overlay || !inner) return;
 
   inner.innerHTML = '';
 
-  // ── ヘッダー ──
+  // ── 上段：タイトル＋タブ＋ターン情報＋閉じる ──
   const header = document.createElement('div');
   header.className = 'rv-header';
 
@@ -364,17 +376,19 @@ export function showReviewDialog(reviewData) {
   }
   header.appendChild(tabs);
 
+  const turnCounter = document.createElement('span');
+  turnCounter.id = 'rv-turn-counter';
+  turnCounter.className = 'rv-turn-counter';
+  header.appendChild(turnCounter);
+
   const closeBtn = document.createElement('button');
   closeBtn.className = 'rv-close';
-  closeBtn.textContent = '×';
+  closeBtn.textContent = '× 閉じる';
   closeBtn.addEventListener('click', hideReviewDialog);
   header.appendChild(closeBtn);
   inner.appendChild(header);
 
-  // ── ボード ──
-  inner.appendChild(_buildReviewBoard());
-
-  // ── 操作コントロール ──
+  // ── 下段：ナビゲーション ──
   const ctrl = document.createElement('div');
   ctrl.className = 'rv-ctrl';
 
@@ -387,12 +401,6 @@ export function showReviewDialog(reviewData) {
   };
   ctrl.appendChild(mkBtn('⏮', () => { _rv.turn = 0; _renderRvFrame(); }));
   ctrl.appendChild(mkBtn('◀', () => { _rv.turn = Math.max(0, _rv.turn - 1); _renderRvFrame(); }));
-
-  const turnCounter = document.createElement('span');
-  turnCounter.id = 'rv-turn-counter';
-  turnCounter.className = 'rv-turn-counter';
-  ctrl.appendChild(turnCounter);
-
   ctrl.appendChild(mkBtn('▶', () => {
     const max = (_rv.data.discardHistory?.[_rv.player]?.length ?? 0) - 1;
     _rv.turn = Math.min(max, _rv.turn + 1); _renderRvFrame();
@@ -411,95 +419,8 @@ export function showReviewDialog(reviewData) {
 
   inner.appendChild(ctrl);
 
-  overlay.style.display = 'flex';
+  overlay.style.display = 'block';
   _renderRvFrame();
-}
-
-/** ボード構造を生成 */
-function _buildReviewBoard() {
-  const surface = document.createElement('div');
-  surface.className = 'rv-board-surface';
-
-  // 北エリア
-  const north = document.createElement('div');
-  north.id = 'rv-area-north';
-  const nhrow = document.createElement('div');
-  nhrow.className = 'north-hand-row';
-  const melds2 = document.createElement('div');
-  melds2.id = 'rv-melds-2'; melds2.className = 'meld-row';
-  const cpuHand2 = document.createElement('div');
-  cpuHand2.id = 'rv-cpu-hand-2'; cpuHand2.className = 'cpu-hand-row';
-  nhrow.appendChild(melds2); nhrow.appendChild(cpuHand2);
-  north.appendChild(nhrow);
-  surface.appendChild(north);
-
-  // 中段
-  const middle = document.createElement('div');
-  middle.id = 'rv-middle-row';
-
-  // 東エリア（左）
-  const east = document.createElement('div');
-  east.id = 'rv-area-east';
-  const sideColE = document.createElement('div');
-  sideColE.className = 'side-hand-col';
-  const cpuHand3 = document.createElement('div');
-  cpuHand3.id = 'rv-cpu-hand-3'; cpuHand3.className = 'cpu-hand-vert';
-  const melds3 = document.createElement('div');
-  melds3.id = 'rv-melds-3'; melds3.className = 'meld-vert';
-  sideColE.appendChild(cpuHand3); sideColE.appendChild(melds3);
-  east.appendChild(sideColE);
-  middle.appendChild(east);
-
-  // 中央テーブル
-  const center = document.createElement('div');
-  center.id = 'rv-table-center';
-  const disc2 = document.createElement('div');
-  disc2.id = 'rv-discards-2'; disc2.className = 'discard-area discard-north';
-  center.appendChild(disc2);
-  const cmrow = document.createElement('div');
-  cmrow.id = 'rv-center-mid-row';
-  const disc3 = document.createElement('div');
-  disc3.id = 'rv-discards-3'; disc3.className = 'discard-area discard-east';
-  const deco = document.createElement('div');
-  deco.id = 'rv-center-deco';
-  const disc1 = document.createElement('div');
-  disc1.id = 'rv-discards-1'; disc1.className = 'discard-area discard-west';
-  cmrow.appendChild(disc3); cmrow.appendChild(deco); cmrow.appendChild(disc1);
-  center.appendChild(cmrow);
-  const disc0 = document.createElement('div');
-  disc0.id = 'rv-discards-0'; disc0.className = 'discard-area discard-south';
-  center.appendChild(disc0);
-  middle.appendChild(center);
-
-  // 西エリア（右）
-  const west = document.createElement('div');
-  west.id = 'rv-area-west';
-  const sideColW = document.createElement('div');
-  sideColW.className = 'side-hand-col';
-  const melds1 = document.createElement('div');
-  melds1.id = 'rv-melds-1'; melds1.className = 'meld-vert';
-  const cpuHand1 = document.createElement('div');
-  cpuHand1.id = 'rv-cpu-hand-1'; cpuHand1.className = 'cpu-hand-vert';
-  sideColW.appendChild(melds1); sideColW.appendChild(cpuHand1);
-  west.appendChild(sideColW);
-  middle.appendChild(west);
-
-  surface.appendChild(middle);
-
-  // 南エリア（手牌＋分析）
-  const south = document.createElement('div');
-  south.id = 'rv-area-south';
-  const srow = document.createElement('div');
-  srow.className = 'south-hand-row';
-  const phand = document.createElement('div');
-  phand.id = 'rv-player-hand';
-  const melds0 = document.createElement('div');
-  melds0.id = 'rv-melds-0'; melds0.className = 'meld-row';
-  srow.appendChild(phand); srow.appendChild(melds0);
-  south.appendChild(srow);
-  surface.appendChild(south);
-
-  return surface;
 }
 
 function _renderRvFrame() {
@@ -516,7 +437,7 @@ function _renderRvFrame() {
   const turns  = analysis[turnIdx] || [];
   const discId = entry?.discardedId;
 
-  // piの捨て牌を再構築（turns 0..turnIdx-1）
+  // piの捨て牌を再構築（0..turnIdx-1打牌分）
   const piDiscards = [];
   for (let i = 0; i < turnIdx; i++) {
     const e = history[i];
@@ -524,35 +445,48 @@ function _renderRvFrame() {
     if (t) piDiscards.push(t);
   }
 
-  // ── 捨て牌（全4方向） ──
-  for (let p = 0; p < 4; p++) {
-    const el = document.getElementById(`rv-discards-${p}`);
-    if (!el) continue;
-    el.innerHTML = '';
-    const discards = (p === pi) ? piDiscards : (entry?.opponentDiscards?.[p] ?? []);
-    for (const tile of discards) {
-      const t = createTileEl(tile);
-      t.classList.add('discard-tile');
-      el.appendChild(t);
-    }
-  }
+  // 実ボード用のfakeStateを組み立てる
+  // discards: piはpiDiscards、他はopponentDiscards
+  const fakeDiscards = [0,1,2,3].map(p =>
+    p === pi ? piDiscards : (entry?.opponentDiscards?.[p] ?? [])
+  );
 
-  // ── CPU手牌（裏向き） ──
+  // hands[0] = piの手牌（南エリアに表示）、hands[1..3] = CPU（枚数推定、裏向き表示用）
+  const fakeHands = [entry?.handBefore ?? []];
   for (let cpuPos = 1; cpuPos <= 3; cpuPos++) {
-    const el = document.getElementById(`rv-cpu-hand-${cpuPos}`);
-    if (!el) continue;
-    el.innerHTML = '';
-    // piがこの位置を占める場合は player0 を代わりに表示
     const displayPlayer = (cpuPos !== pi) ? cpuPos : 0;
     const discCount = entry?.opponentDiscards?.[displayPlayer]?.length ?? 0;
-    const handCount = Math.max(0, 13 - discCount);
-    for (let j = 0; j < handCount; j++) {
-      el.appendChild(createTileEl(null, { faceDown: true }));
-    }
+    fakeHands.push(new Array(Math.max(0, 13 - discCount)).fill(null));
   }
 
-  // ── 分析対象プレイヤーの手牌（南エリア） ──
-  const playerHandEl = document.getElementById('rv-player-hand');
+  const fakeState = {
+    hands:           fakeHands,
+    discards:        fakeDiscards,
+    melds:           [[],[],[],[]],
+    doraIndicators:  entry?.doraIndicators ?? [],
+    scores:          [0,0,0,0],
+    riichi:          [false,false,false,false],
+    riichiDiscardIdx:[-1,-1,-1,-1],
+    drawnTile:       null,
+    lastDiscard:     null,
+    remaining:       0,
+    log:             [],
+    pendingClaims:   [],
+    state:           'REVIEW',
+    winResult:       null,
+  };
+
+  // 実ボードを描画（renderButtons以外）
+  renderScores(fakeState);
+  renderDora(fakeState);
+  renderCpuHands(fakeState);
+  renderDiscards(fakeState);
+  renderMelds(fakeState);
+  renderRemainingCount(fakeState);
+  renderRiichiMarkers(fakeState);
+
+  // ── 手牌エリアに評価値付き手牌を描画 ──
+  const playerHandEl = document.getElementById('player-hand');
   if (playerHandEl) {
     playerHandEl.innerHTML = '';
     if (entry) {
@@ -598,44 +532,12 @@ function _renderRvFrame() {
     }
   }
 
-  // ── 中央デコ（ドラ＋ターン情報） ──
-  const deco = document.getElementById('rv-center-deco');
-  if (deco) {
-    deco.innerHTML = '';
-
-    if (entry?.doraIndicators?.length > 0) {
-      const doraWrap = document.createElement('div');
-      doraWrap.style.cssText = 'display:flex;flex-direction:column;align-items:center;gap:4px;';
-      const lbl = document.createElement('div');
-      lbl.className = 'label-text';
-      lbl.textContent = 'ドラ';
-      doraWrap.appendChild(lbl);
-      const doraRow = document.createElement('div');
-      doraRow.style.cssText = 'display:flex;gap:3px;flex-wrap:wrap;justify-content:center;';
-      for (const d of entry.doraIndicators) {
-        const de = createTileEl(d);
-        de.style.cssText = 'width:28px!important;height:40px!important;';
-        doraRow.appendChild(de);
-      }
-      doraWrap.appendChild(doraRow);
-      deco.appendChild(doraWrap);
-    }
-
-    const info = document.createElement('div');
-    info.className = 'rv-turn-info';
-    info.textContent = total > 0 ? `${turnIdx + 1} / ${total}` : '- / -';
-    deco.appendChild(info);
-
-    const pname = document.createElement('div');
-    pname.className = 'label-text';
-    pname.textContent = REVIEW_SEAT_NAMES[pi];
-    deco.appendChild(pname);
-  }
-
-  // ── ターンカウンター（コントロール内） ──
+  // ── ターンカウンター更新 ──
   const counter = document.getElementById('rv-turn-counter');
   if (counter) {
-    counter.textContent = total > 0 ? `第 ${turnIdx + 1} / ${total} 打牌` : '打牌なし';
+    counter.textContent = total > 0
+      ? `${REVIEW_SEAT_NAMES[pi]} 第 ${turnIdx + 1} / ${total} 打牌`
+      : '打牌なし';
   }
 }
 
@@ -662,6 +564,14 @@ function _toggleAutoPlay() {
 
 export function hideReviewDialog() {
   _stopAutoPlay();
-  const d = document.getElementById('review-overlay');
-  if (d) d.style.display = 'none';
+  document.getElementById('review-overlay').style.display = 'none';
+
+  // アクションボタンを戻す
+  const controls = document.getElementById('controls');
+  if (controls) controls.style.display = '';
+
+  // 元のダイアログを戻す
+  const id = _rv.sourceDialog === 'win' ? 'win-dialog' : 'draw-dialog';
+  const dlg = document.getElementById(id);
+  if (dlg) dlg.style.display = 'flex';
 }
