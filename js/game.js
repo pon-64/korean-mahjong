@@ -67,6 +67,18 @@ export class Game {
     if (playerIdx === 0) {
       this.state = STATE.PLAYER_ACTION;
       this.onUpdate('draw', { player: 0, tile });
+
+      // リーチ中でツモ和了もカンもできない場合は自動ツモ切り
+      if (this.riichi[0]) {
+        const meldCnt = this.melds[0].length;
+        if (!isWinningHand(this.hands[0], meldCnt)) {
+          setTimeout(() => {
+            if (this.state === STATE.PLAYER_ACTION && this.drawnTile) {
+              this._discard(0, this.drawnTile);
+            }
+          }, 700);
+        }
+      }
     } else {
       this.state = STATE.CPU_TURN;
       this.onUpdate('draw', { player: playerIdx, tile });
